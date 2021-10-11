@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// Provider represents OpenID Connect provider
 type Provider struct {
 	Name         string
 	URL          string
@@ -17,6 +18,7 @@ type Provider struct {
 	wellKnown    *WellKnown
 }
 
+// WellKnown represents OpenID Connect well-known config
 type WellKnown struct {
 	Issuer      string   `json:"issuer"`
 	KeysURI     string   `json:"jwks_uri"`
@@ -36,6 +38,7 @@ type WellKnown struct {
 	}
 }
 
+// WithCredential sets client id and secret for a Provider
 func (p *Provider) WithCredential(id string, secret string) *Provider {
 	if id == "" || secret == "" {
 		log.Fatalf("goic (%s): client ID and client secret may not be empty", p.Name)
@@ -47,6 +50,7 @@ func (p *Provider) WithCredential(id string, secret string) *Provider {
 	return p
 }
 
+// WithScope sets scope for a Provider
 func (p *Provider) WithScope(s string) *Provider {
 	if s == "" || !strings.Contains(s, "openid") {
 		s = s + " openid"
@@ -56,6 +60,7 @@ func (p *Provider) WithScope(s string) *Provider {
 	return p
 }
 
+// getWellKnown gets the well known config from Provider remote
 func (p *Provider) getWellKnown() (*WellKnown, error) {
 	if nil != p.wellKnown {
 		return p.wellKnown, nil

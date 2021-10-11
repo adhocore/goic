@@ -19,24 +19,46 @@ import (
 )
 
 var (
-	ErrProviderState   = errors.New("goic provider: invalid request state")
+	// ErrProviderState is error for invalid request state
+	ErrProviderState = errors.New("goic provider: invalid request state")
+
+	// ErrProviderSupport is error for unsupported provider
 	ErrProviderSupport = errors.New("goic provider: unsupported provider")
-	ErrTokenEmpty      = errors.New("goic id_token: empty token")
-	ErrTokenInvalid    = errors.New("goic id_token: invalid id_token")
-	ErrTokenNonce      = errors.New("goic id_token: invalid nonce")
-	ErrTokenAud        = errors.New("goic id_token: invalid audience")
-	ErrTokenAlgo       = errors.New("goic id_token: unsupported signing algo")
-	ErrTokenKey        = errors.New("goic id_token: can't determine signing key")
-	ErrTokenAccessKey  = errors.New("goic id_token: invalid access_token")
+
+	// ErrTokenEmpty is error for empty token
+	ErrTokenEmpty = errors.New("goic id_token: empty token")
+
+	// ErrTokenInvalid is error for invalid token
+	ErrTokenInvalid = errors.New("goic id_token: invalid id_token")
+
+	// ErrTokenNonce is error for invalid noce
+	ErrTokenNonce = errors.New("goic id_token: invalid nonce")
+
+	// ErrTokenAud is error for invalid audience
+	ErrTokenAud = errors.New("goic id_token: invalid audience")
+
+	// ErrTokenAlgo is error for unsupported signing algo
+	ErrTokenAlgo = errors.New("goic id_token: unsupported signing algo")
+
+	// ErrTokenKey is error for undetermined signing key
+	ErrTokenKey = errors.New("goic id_token: can't determine signing key")
+
+	// ErrTokenAccessKey is error for invalid access_token
+	ErrTokenAccessKey = errors.New("goic id_token: invalid access_token")
 )
 
 var (
+	// stateLength is state query param length
 	stateLength = 16
+
+	// nonceLength is nonce query param length
 	nonceLength = 20
 )
 
+// UserCallback defines signature for post user verification callback
 type UserCallback func(t *Token, u *User, w http.ResponseWriter, r *http.Request)
 
+// Goic is the main program
 type Goic struct {
 	URIPrefix    string
 	verbose      bool
@@ -46,6 +68,7 @@ type Goic struct {
 	states       map[string]string
 }
 
+// Token represents token structure from well known token endpoint
 type Token struct {
 	Err          string `json:"error"`
 	ErrDesc      string `json:"error_description"`
@@ -57,6 +80,7 @@ type Token struct {
 	idToken      map[string]interface{}
 }
 
+// User represents user from well know user info endpoint
 type User struct {
 	Email         string `json:"email"`
 	EmailVerified bool   `json:"email_verified,omitempty"`
@@ -69,6 +93,7 @@ type User struct {
 	Error         error
 }
 
+// New gives new GOIC instance
 func New(uri string, verbose bool) *Goic {
 	providers := make(map[string]*Provider)
 	states := make(map[string]string)
@@ -76,6 +101,8 @@ func New(uri string, verbose bool) *Goic {
 	return &Goic{URIPrefix: uri, verbose: verbose, providers: providers, states: states}
 }
 
+// NewProvider adds a new OpenID provider by name
+// It also preloads the well known config and jwks keys
 func (g *Goic) NewProvider(name string, uri string) *Provider {
 	if p, ok := g.providers[name]; ok {
 		return p
@@ -95,11 +122,13 @@ func (g *Goic) NewProvider(name string, uri string) *Provider {
 	return p
 }
 
+// Supports checks if a given provider name is supported
 func (g *Goic) Supports(name string) bool {
 	_, ok := g.providers[name]
 	return ok
 }
 
+// RequestAuth is the starting point of OpenID flow
 func (g *Goic) RequestAuth(name string, res http.ResponseWriter, req *http.Request) error {
 	p := g.providers[name]
 
@@ -135,6 +164,7 @@ func (g *Goic) RequestAuth(name string, res http.ResponseWriter, req *http.Reque
 	return nil
 }
 
+// checkState checks if given state is valid (i.e. known)
 func (g *Goic) checkState(state string) (string, error) {
 	if state == "" || len(state) != stateLength {
 		return "", ErrProviderState
@@ -152,6 +182,8 @@ func (g *Goic) checkState(state string) (string, error) {
 	return nonce, nil
 }
 
+// Authenticate tries to authenticate a user by given code and nonce
+// It is where token is requested and validated
 func (g *Goic) Authenticate(name string, code string, nonce string, req *http.Request) (*Token, error) {
 	p, _ := g.providers[name]
 
@@ -167,6 +199,7 @@ func (g *Goic) Authenticate(name string, code string, nonce string, req *http.Re
 	return tok, nil
 }
 
+// getToken actually gets token from Provider via wellKnown.TokenURI
 func (g *Goic) getToken(p *Provider, code string, redir string) (*Token, error) {
 	tok := &Token{Provider: p.Name}
 	buf, _ := json.Marshal(map[string]string{
@@ -213,10 +246,8 @@ func (g *Goic) getToken(p *Provider, code string, redir string) (*Token, error) 
 	return tok, nil
 }
 
+// verifyToken checks and verifies authenticity and ownership of Token
 func (g *Goic) verifyToken(p *Provider, tok *Token, nonce string) error {
-	if p.wellKnown.KeysURI == "" {
-		return nil
-	}
 	seg := strings.Split(tok.IDToken, ".")
 	if len(seg) != 3 {
 		return ErrTokenInvalid
@@ -232,6 +263,11 @@ func (g *Goic) verifyToken(p *Provider, tok *Token, nonce string) error {
 
 	if !claims.VerifyAudience(p.clientID, true) {
 		return ErrTokenAud
+	}
+
+	// todo: is this ok here?
+	if p.wellKnown.KeysURI == "" {
+		return nil
 	}
 
 	_, err := jwt.ParseWithClaims(tok.IDToken, claims, func(t *jwt.Token) (interface{}, error) {
@@ -256,6 +292,7 @@ func (g *Goic) verifyToken(p *Provider, tok *Token, nonce string) error {
 	return err
 }
 
+// MiddlewareHandler is wrapper for http.Handler that adds OpenID support
 func (g *Goic) MiddlewareHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		if strings.Index(req.URL.Path, g.URIPrefix) != 0 {
@@ -266,6 +303,7 @@ func (g *Goic) MiddlewareHandler(next http.Handler) http.Handler {
 	})
 }
 
+// MiddlewareFunc is wrapper for http.HandlerFunc that adds OpenID support
 func (g *Goic) MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		if strings.Index(req.URL.Path, g.URIPrefix) != 0 {
@@ -276,6 +314,7 @@ func (g *Goic) MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// process is the actual processor of OpenID flow
 func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	defer trapError(res)
 
@@ -336,11 +375,14 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	g.userCallback(tok, g.UserInfo(tok), res, req)
 }
 
+// UserCallback sets a callback for post user verification
 func (g *Goic) UserCallback(cb UserCallback) *Goic {
 	g.userCallback = cb
 	return g
 }
 
+// UserInfo loads user info when given a Token
+// Error if any is embedded inside User.Error
 func (g *Goic) UserInfo(tok *Token) *User {
 	user := &User{}
 	if !g.Supports(tok.Provider) {

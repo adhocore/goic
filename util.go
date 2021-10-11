@@ -27,6 +27,7 @@ func RandomString(len int) string {
 	return string(str)
 }
 
+// ParseModulo parses the "n" value of jwks key
 func ParseModulo(ns string) *big.Int {
 	pad := len(ns) % 4
 	for pad > 0 {
@@ -40,10 +41,12 @@ func ParseModulo(ns string) *big.Int {
 	return new(big.Int).SetBytes(buf)
 }
 
+// ParseExponent ParseModulo parses the "e" value of jwks key
 func ParseExponent(es string) int {
 	return int(ParseModulo(es).Uint64())
 }
 
+// currentURL gets the current request URL with/without query
 func currentURL(req *http.Request, query bool) string {
 	u := req.URL
 	if u.Scheme == "" {
@@ -62,6 +65,7 @@ func currentURL(req *http.Request, query bool) string {
 	return u.String()
 }
 
+// trapError recovers panics during OpenID operation
 func trapError(res http.ResponseWriter) {
 	msg := "Something went wrong"
 	if rec := recover(); rec != nil {
@@ -74,6 +78,7 @@ func trapError(res http.ResponseWriter) {
 	}
 }
 
+// userError embeds error to User
 func userErr(u *User, err error) *User {
 	u.Error = err
 	return u

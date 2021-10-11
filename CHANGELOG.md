@@ -1,3 +1,13 @@
+## [v0.0.3](https://github.com/adhocore/goic/releases/tag/v0.0.3) (2021-10-11)
+
+### Internal Refactors
+- Move currentUrl() to util (Jitendra Adhikari) [_2423d7d_](https://github.com/adhocore/goic/commit/2423d7d)
+
+### Documentations
+- Update todo list (Jitendra Adhikari) [_93cdafb_](https://github.com/adhocore/goic/commit/93cdafb)
+- Add func docs (Jitendra Adhikari) [_8fa088e_](https://github.com/adhocore/goic/commit/8fa088e)
+
+
 ## [v0.0.2](https://github.com/adhocore/goic/releases/tag/v0.0.2) (2021-10-11)
 
 ### Internal Refactors

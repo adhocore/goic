@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	randomPool = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	poolLength = len(randomPool)
+	randomPool  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	poolLength  = len(randomPool)
+	urlDecodeRe = strings.NewReplacer("-", "+", "_", "/")
 )
 
 // RandomString generates random string of given length
@@ -27,23 +28,27 @@ func RandomString(len int) string {
 	return string(str)
 }
 
-// ParseModulo parses the "n" value of jwks key
-func ParseModulo(ns string) *big.Int {
-	pad := len(ns) % 4
+// Base64UrlDecode decodes JWT segments with base64 accounting for URL chars
+func Base64UrlDecode(s string) ([]byte, error) {
+	pad := len(s) % 4
 	for pad > 0 {
-		ns += "="
+		s += "="
 		pad--
 	}
 
-	re := strings.NewReplacer("-", "+", "_", "/")
-	buf, _ := base64.StdEncoding.DecodeString(re.Replace(ns))
+	return base64.StdEncoding.DecodeString(urlDecodeRe.Replace(s))
+}
 
+// ParseModulo parses the "n" value of jwks key
+func ParseModulo(ns string) *big.Int {
+	buf, _ := Base64UrlDecode(ns)
 	return new(big.Int).SetBytes(buf)
 }
 
 // ParseExponent ParseModulo parses the "e" value of jwks key
 func ParseExponent(es string) int {
-	return int(ParseModulo(es).Uint64())
+	buf, _ := Base64UrlDecode(es)
+	return int(new(big.Int).SetBytes(buf).Uint64())
 }
 
 // currentURL gets the current request URL with/without query

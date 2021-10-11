@@ -36,10 +36,9 @@ providers get a URI like so `/auth/o8/<name>`. Example:
 
 Get ready with OpenID provider credentials (client id and secret).
 For Google, check [this](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
-
 To use the example below you need to export `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` env vars.
 
-You also need to configure application domain and redirect URI.
+You also need to configure application domain and redirect URI in the Provider console/dashboard.
 (redirect URI is same as OpenID URI in above table).
 
 Below is an example code but instead of copy/pasting it entirely you can use it for reference.

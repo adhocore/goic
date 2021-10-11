@@ -131,6 +131,10 @@ when GOIC has new features.
 
 > The example and discussion here assume `localhost` domain so adjust that accordingly for your domains.
 
+### Demo
+> Visit [https://urlssh.xyz/auth/o8/google](https://urlssh.xyz/auth/o8/google),
+> on successful verification your information is echoed back to you as JSON but **not** saved in server.
+
 ---
 # TODO
 

@@ -128,6 +128,7 @@ when GOIC has new features.
 - Support refresh token grant_type
 - Tests and more tests
 - Release stable version
+- Support OpenID `Implicit Flow`
 
 ## License
 

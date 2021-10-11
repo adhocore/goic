@@ -248,21 +248,9 @@ func (g *Goic) getToken(p *Provider, code string, redir string) (*Token, error) 
 
 // verifyToken checks and verifies authenticity and ownership of Token
 func (g *Goic) verifyToken(p *Provider, tok *Token, nonce string) error {
-	seg := strings.Split(tok.IDToken, ".")
-	if len(seg) != 3 {
-		return ErrTokenInvalid
-	}
-
-	claims := jwt.MapClaims{}
-	str, _ := base64.StdEncoding.DecodeString(seg[1])
-	_ = json.Unmarshal(str, &claims)
-
-	if subtle.ConstantTimeCompare([]byte(nonce), []byte(claims["nonce"].(string))) == 0 {
-		return ErrTokenNonce
-	}
-
-	if !claims.VerifyAudience(p.clientID, true) {
-		return ErrTokenAud
+	claims, err := verifyClaims(tok, nonce, p.clientID)
+	if err != nil {
+		return err
 	}
 
 	// todo: is this ok here?
@@ -270,7 +258,7 @@ func (g *Goic) verifyToken(p *Provider, tok *Token, nonce string) error {
 		return nil
 	}
 
-	_, err := jwt.ParseWithClaims(tok.IDToken, claims, func(t *jwt.Token) (interface{}, error) {
+	_, err = jwt.ParseWithClaims(tok.IDToken, claims, func(t *jwt.Token) (interface{}, error) {
 		alg := t.Header["alg"].(string)
 		if alg == "HS256" || alg == "HS384" || alg == "HS512" {
 			return []byte(p.clientSecret), nil
@@ -290,6 +278,31 @@ func (g *Goic) verifyToken(p *Provider, tok *Token, nonce string) error {
 	})
 
 	return err
+}
+
+func verifyClaims(tok *Token, nonce, aud string) (jwt.Claims, error) {
+	claims := jwt.MapClaims{}
+	seg := strings.Split(tok.IDToken, ".")
+	if len(seg) != 3 {
+		return claims, ErrTokenInvalid
+	}
+
+	buf, _ := Base64UrlDecode(seg[1])
+	if err := json.Unmarshal(buf, &claims); err != nil {
+		return claims, ErrTokenClaims
+	}
+
+	usrNonce, ok := claims["nonce"]
+	if ok && subtle.ConstantTimeCompare([]byte(nonce), []byte(usrNonce.(string))) == 0 {
+		return claims, ErrTokenNonce
+	}
+
+	_, ok = claims["aud"]
+	if ok && !claims.VerifyAudience(aud, true) {
+		return claims, ErrTokenAud
+	}
+
+	return claims, nil
 }
 
 // MiddlewareHandler is wrapper for http.Handler that adds OpenID support

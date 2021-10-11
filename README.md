@@ -132,8 +132,12 @@ when GOIC has new features.
 > The example and discussion here assume `localhost` domain so adjust that accordingly for your domains.
 
 ### Demo
-> Visit [https://urlssh.xyz/auth/o8/google](https://urlssh.xyz/auth/o8/google),
-> on successful verification your information is echoed back to you as JSON but **not** saved in server.
+
+`GOIC` has been implemented in opensource project [adhocore/urlsh](https://github.com/adhocore/urlsh):
+
+> Visit [https://urlssh.xyz/auth/o8/google](https://urlssh.xyz/auth/o8/google)
+
+On successful verification your information is [echoed back](https://github.com/adhocore/urlsh/blob/main/router/router.go#L48-L53) to you as JSON but **not** saved in server (pinky promise).
 
 ---
 # TODO

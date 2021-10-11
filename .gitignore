@@ -1,0 +1,12 @@
+*.env
+*.out
+*.php
+*.pem
+*.crt
+*.key
+*.cnf
+*.srl
+*.csr
+*.ext
+*.exe
+/.idea

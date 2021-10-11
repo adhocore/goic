@@ -1,3 +1,12 @@
+## [v0.0.2](https://github.com/adhocore/goic/releases/tag/v0.0.2) (2021-10-11)
+
+### Internal Refactors
+- Switch to jwt v4 (Jitendra Adhikari) [_5888654_](https://github.com/adhocore/goic/commit/5888654)
+
+### Miscellaneous
+- Use jwt v4 (Jitendra Adhikari) [_54de05e_](https://github.com/adhocore/goic/commit/54de05e)
+
+
 ## [v0.0.1](https://github.com/adhocore/goic/releases/tag/v0.0.1) (2021-10-11)
 
 ### Features
@@ -13,5 +22,3 @@
 
 ### Documentations
 - Add README (Jitendra Adhikari) [_252eae9_](https://github.com/adhocore/goic/commit/252eae9)
-
-

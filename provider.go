@@ -39,7 +39,7 @@ type WellKnown struct {
 }
 
 // WithCredential sets client id and secret for a Provider
-func (p *Provider) WithCredential(id string, secret string) *Provider {
+func (p *Provider) WithCredential(id, secret string) *Provider {
 	if id == "" || secret == "" {
 		log.Fatalf("goic (%s): client ID and client secret may not be empty", p.Name)
 	}

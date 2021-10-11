@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"crypto/subtle"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,6 +29,9 @@ var (
 
 	// ErrTokenInvalid is error for invalid token
 	ErrTokenInvalid = errors.New("goic id_token: invalid id_token")
+
+	// ErrTokenClaims is error for invalid token claims
+	ErrTokenClaims = errors.New("goic id_token: invalid id_token claims")
 
 	// ErrTokenNonce is error for invalid noce
 	ErrTokenNonce = errors.New("goic id_token: invalid nonce")
@@ -103,7 +105,7 @@ func New(uri string, verbose bool) *Goic {
 
 // NewProvider adds a new OpenID provider by name
 // It also preloads the well known config and jwks keys
-func (g *Goic) NewProvider(name string, uri string) *Provider {
+func (g *Goic) NewProvider(name, uri string) *Provider {
 	if p, ok := g.providers[name]; ok {
 		return p
 	}
@@ -184,7 +186,7 @@ func (g *Goic) checkState(state string) (string, error) {
 
 // Authenticate tries to authenticate a user by given code and nonce
 // It is where token is requested and validated
-func (g *Goic) Authenticate(name string, code string, nonce string, req *http.Request) (*Token, error) {
+func (g *Goic) Authenticate(name, code, nonce string, req *http.Request) (*Token, error) {
 	p, _ := g.providers[name]
 
 	tok, err := g.getToken(p, code, currentURL(req, false))
@@ -200,7 +202,7 @@ func (g *Goic) Authenticate(name string, code string, nonce string, req *http.Re
 }
 
 // getToken actually gets token from Provider via wellKnown.TokenURI
-func (g *Goic) getToken(p *Provider, code string, redir string) (*Token, error) {
+func (g *Goic) getToken(p *Provider, code, redir string) (*Token, error) {
 	tok := &Token{Provider: p.Name}
 	buf, _ := json.Marshal(map[string]string{
 		"grant_type":    "authorization_code",
@@ -344,7 +346,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		}
 
 		if g.verbose {
-			log.Println(msg)
+			log.Println("[err] goic request auth callback: " + msg)
 		}
 		http.Error(res, msg, http.StatusInternalServerError)
 		return
@@ -354,7 +356,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	if code == "" {
 		if err := g.RequestAuth(name, res, req); err != nil {
 			if g.verbose {
-				log.Printf("%v\n", err)
+				log.Println("[err] goic request auth: %v\n", err)
 			}
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 		}
@@ -364,7 +366,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	nonce, err := g.checkState(qry.Get("state"))
 	if err != nil {
 		if g.verbose {
-			log.Printf("%v\n", err)
+			log.Printf("[err] goic check state: %v\n", err)
 		}
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
@@ -373,7 +375,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	tok, err := g.Authenticate(name, code, nonce, req)
 	if err != nil {
 		if g.verbose {
-			log.Printf("%v\n", err)
+			log.Printf("[err] goic request auth: %v\n", err)
 		}
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return

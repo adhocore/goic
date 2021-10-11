@@ -1,3 +1,13 @@
+## [v0.0.4](https://github.com/adhocore/goic/releases/tag/v0.0.4) (2021-10-11)
+
+### Miscellaneous
+- Fix lf (Jitendra Adhikari) [_1d9106b_](https://github.com/adhocore/goic/commit/1d9106b)
+- Update editorconfig (Jitendra Adhikari) [_cccf302_](https://github.com/adhocore/goic/commit/cccf302)
+
+### Documentations
+- Add badges, fix lf (Jitendra Adhikari) [_3019df0_](https://github.com/adhocore/goic/commit/3019df0)
+
+
 ## [v0.0.3](https://github.com/adhocore/goic/releases/tag/v0.0.3) (2021-10-11)
 
 ### Internal Refactors

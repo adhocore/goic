@@ -1,3 +1,18 @@
+## [v0.0.5](https://github.com/adhocore/goic/releases/tag/v0.0.5) (2021-10-11)
+
+### Features
+- Add base64 url decoder and use from parseModulo(), parseExponent() (Jitendra Adhikari) [_fdfd3af_](https://github.com/adhocore/goic/commit/fdfd3af)
+
+### Internal Refactors
+- Use shorthand func param types, update verbose msg format (Jitendra Adhikari) [_19a1bca_](https://github.com/adhocore/goic/commit/19a1bca)
+- Extract verifyClaims() from verifyToken() (Jitendra Adhikari) [_8672ae9_](https://github.com/adhocore/goic/commit/8672ae9)
+
+### Documentations
+- Update demo section (Jitendra) [_2095357_](https://github.com/adhocore/goic/commit/2095357)
+- Add demo URL (Jitendra) [_f0afa31_](https://github.com/adhocore/goic/commit/f0afa31)
+- Minor updates (Jitendra) [_8dfb403_](https://github.com/adhocore/goic/commit/8dfb403)
+
+
 ## [v0.0.4](https://github.com/adhocore/goic/releases/tag/v0.0.4) (2021-10-11)
 
 ### Miscellaneous

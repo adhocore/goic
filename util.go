@@ -44,6 +44,24 @@ func ParseExponent(es string) int {
 	return int(ParseModulo(es).Uint64())
 }
 
+func currentURL(req *http.Request, query bool) string {
+	u := req.URL
+	if u.Scheme == "" {
+		u.Scheme = "https"
+	}
+	if u.Host == "" {
+		u.Host = req.Header.Get("Host")
+		if u.Host == "" {
+			u.Host = req.Host
+		}
+	}
+	if !query {
+		return strings.Replace(u.String(), "?"+u.RawQuery, "", 1)
+	}
+
+	return u.String()
+}
+
 func trapError(res http.ResponseWriter) {
 	msg := "Something went wrong"
 	if rec := recover(); rec != nil {

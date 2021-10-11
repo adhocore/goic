@@ -100,24 +100,6 @@ func (g *Goic) Supports(name string) bool {
 	return ok
 }
 
-func (g *Goic) currentURL(req *http.Request, query bool) string {
-	u := req.URL
-	if u.Scheme == "" {
-		u.Scheme = "https"
-	}
-	if u.Host == "" {
-		u.Host = req.Header.Get("Host")
-		if u.Host == "" {
-			u.Host = req.Host
-		}
-	}
-	if !query {
-		return strings.Replace(u.String(), "?"+u.RawQuery, "", 1)
-	}
-
-	return u.String()
-}
-
 func (g *Goic) RequestAuth(name string, res http.ResponseWriter, req *http.Request) error {
 	p := g.providers[name]
 
@@ -128,7 +110,7 @@ func (g *Goic) RequestAuth(name string, res http.ResponseWriter, req *http.Reque
 
 	qry := redir.URL.Query()
 	qry.Add("response_type", "code")
-	qry.Add("redirect_uri", g.currentURL(req, false))
+	qry.Add("redirect_uri", currentURL(req, false))
 	qry.Add("client_id", p.clientID)
 	qry.Add("scope", p.Scope)
 
@@ -173,7 +155,7 @@ func (g *Goic) checkState(state string) (string, error) {
 func (g *Goic) Authenticate(name string, code string, nonce string, req *http.Request) (*Token, error) {
 	p, _ := g.providers[name]
 
-	tok, err := g.getToken(p, code, g.currentURL(req, false))
+	tok, err := g.getToken(p, code, currentURL(req, false))
 	if err != nil {
 		return tok, err
 	}

@@ -204,20 +204,20 @@ func (g *Goic) Authenticate(name, code, nonce string, req *http.Request) (*Token
 // getToken actually gets token from Provider via wellKnown.TokenURI
 func (g *Goic) getToken(p *Provider, code, redir string) (*Token, error) {
 	tok := &Token{Provider: p.Name}
-	buf, _ := json.Marshal(map[string]string{
-		"grant_type":    "authorization_code",
-		"code":          code,
-		"redirect_uri":  redir,
-		"client_id":     p.clientID,
-		"client_secret": p.clientSecret,
-	})
 
-	req, err := http.NewRequest("POST", p.wellKnown.TokenURI, bytes.NewBuffer(buf))
+	qry := url.Values{}
+	qry.Add("grant_type", "authorization_code")
+	qry.Add("code", code)
+	qry.Add("redirect_uri", redir)
+	qry.Add("client_id", p.clientID)
+	qry.Add("client_secret", p.clientSecret)
+
+	req, err := http.NewRequest("POST", p.wellKnown.TokenURI, strings.NewReader(qry.Encode()))
 	if err != nil {
 		return tok, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return tok, err

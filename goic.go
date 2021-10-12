@@ -190,7 +190,6 @@ func (g *Goic) checkState(state string) (string, error) {
 		return "", ErrProviderState
 	}
 
-	delete(g.states, state)
 	return nonce, nil
 }
 
@@ -362,7 +361,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	code := qry.Get("code")
+	code, state := qry.Get("code"), qry.Get("state")
 	if code == "" {
 		if err := g.RequestAuth(name, res, req); err != nil {
 			if g.verbose {
@@ -373,7 +372,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	nonce, err := g.checkState(qry.Get("state"))
+	nonce, err := g.checkState(state)
 	if err != nil {
 		if g.verbose {
 			log.Printf("[err] goic check state: %v\n", err)
@@ -390,6 +389,10 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	g.sLock.Lock()
+	delete(g.states, state)
+	g.sLock.Unlock()
 
 	if g.userCallback == nil {
 		res.WriteHeader(http.StatusOK)

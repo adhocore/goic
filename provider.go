@@ -38,6 +38,20 @@ type WellKnown struct {
 	}
 }
 
+// Microsoft is ready to use Provider instance
+var Microsoft = &Provider{
+	Name:  "microsoft",
+	URL:   "https://login.microsoftonline.com/common/v2.0",
+	Scope: "openid email profile offline_access",
+}
+
+// Google is ready to use Provider instance
+var Google = &Provider{
+	Name:  "google",
+	URL:   "https://accounts.google.com",
+	Scope: "openid email profile",
+}
+
 // WithCredential sets client id and secret for a Provider
 func (p *Provider) WithCredential(id, secret string) *Provider {
 	if id == "" || secret == "" {

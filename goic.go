@@ -1,12 +1,10 @@
 package goic
 
 import (
-	"bytes"
 	"crypto/rsa"
 	"crypto/subtle"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -78,7 +76,7 @@ type Token struct {
 	IDToken      string `json:"id_token"`
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
-	Provider     string
+	Provider     string `json:"provider,omitempty"`
 	idToken      map[string]interface{}
 }
 
@@ -92,7 +90,7 @@ type User struct {
 	Name          string `json:"name"`
 	Picture       string `json:"picture,omitempty"`
 	Subject       string `json:"sub,omitempty"`
-	Error         error
+	Error         error  `json:"-"`
 }
 
 // New gives new GOIC instance
@@ -118,6 +116,18 @@ func (g *Goic) NewProvider(name, uri string) *Provider {
 	p := &Provider{Name: name, URL: uri, Scope: "openid", host: u.Host}
 	if _, err := p.getWellKnown(); err != nil {
 		log.Fatalf("goic provider %s: cannot load well-known configuration: %s", name, err.Error())
+	}
+
+	g.providers[p.Name] = p
+	return p
+}
+
+func (g *Goic) AddProvider(p *Provider) *Provider {
+	if p, ok := g.providers[p.Name]; ok {
+		return p
+	}
+	if _, err := p.getWellKnown(); err != nil {
+		log.Fatalf("goic provider %s: cannot load well-known configuration: %s", p.Name, err.Error())
 	}
 
 	g.providers[p.Name] = p
@@ -204,20 +214,20 @@ func (g *Goic) Authenticate(name, code, nonce string, req *http.Request) (*Token
 // getToken actually gets token from Provider via wellKnown.TokenURI
 func (g *Goic) getToken(p *Provider, code, redir string) (*Token, error) {
 	tok := &Token{Provider: p.Name}
-	buf, _ := json.Marshal(map[string]string{
-		"grant_type":    "authorization_code",
-		"code":          code,
-		"redirect_uri":  redir,
-		"client_id":     p.clientID,
-		"client_secret": p.clientSecret,
-	})
 
-	req, err := http.NewRequest("POST", p.wellKnown.TokenURI, bytes.NewBuffer(buf))
+	qry := url.Values{}
+	qry.Add("grant_type", "authorization_code")
+	qry.Add("code", code)
+	qry.Add("redirect_uri", redir)
+	qry.Add("client_id", p.clientID)
+	qry.Add("client_secret", p.clientSecret)
+
+	req, err := http.NewRequest("POST", p.wellKnown.TokenURI, strings.NewReader(qry.Encode()))
 	if err != nil {
 		return tok, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return tok, err
@@ -346,7 +356,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		}
 
 		if g.verbose {
-			log.Println("[err] goic request auth callback: " + msg)
+			log.Printf("[err] goic request auth callback: %s", msg)
 		}
 		http.Error(res, msg, http.StatusInternalServerError)
 		return
@@ -356,7 +366,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	if code == "" {
 		if err := g.RequestAuth(name, res, req); err != nil {
 			if g.verbose {
-				log.Println("[err] goic request auth: %v\n", err)
+				log.Printf("[err] goic request auth: %v\n", err)
 			}
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 		}
@@ -375,7 +385,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	tok, err := g.Authenticate(name, code, nonce, req)
 	if err != nil {
 		if g.verbose {
-			log.Printf("[err] goic request auth: %v\n", err)
+			log.Printf("[err] goic authenticate: %v\n", err)
 		}
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
@@ -383,7 +393,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 
 	if g.userCallback == nil {
 		res.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprintln(res, "OK, the auth flow is complete. However, backend is yet to request userinfo")
+		_, _ = res.Write([]byte("OK, the auth flow is complete. However, backend is yet to request userinfo"))
 		return
 	}
 

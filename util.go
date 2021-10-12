@@ -47,6 +47,10 @@ func ParseModulo(ns string) *big.Int {
 
 // ParseExponent ParseModulo parses the "e" value of jwks key
 func ParseExponent(es string) int {
+	if es == "AQAB" {
+		return 65537
+	}
+
 	buf, _ := Base64UrlDecode(es)
 	return int(new(big.Int).SetBytes(buf).Uint64())
 }

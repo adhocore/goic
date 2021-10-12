@@ -47,7 +47,6 @@ Below is an example code but instead of copy/pasting it entirely you can use it 
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -80,7 +79,7 @@ func main() {
 		log.Println("user: ", u)
 
 		// and tell the user it is all good:
-		_, _ = fmt.Fprintf(w, "All good, check backend console")
+		_, _ = w.Write([]byte("All good, check backend console"))
 	})
 
 	// Listen address for server, 443 for https as OpenID connect mandates it!
@@ -91,11 +90,11 @@ func main() {
 
 	// A catch-all dummy handler
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprintf(w, r.Method+" "+r.URL.Path+"\n")
+		_, _ = w.Write([]byte(r.Method + " " + r.URL.Path))
 	}
 
-	fmt.Println("Server running on https://localhost")
-	fmt.Println("            Visit https://localhost/auth/o8/google")
+	log.Println("Server running on https://localhost")
+	log.Println("            Visit https://localhost/auth/o8/google")
 
 	// This is just example (don't copy it)
 	useMux := os.Getenv("GOIC_HTTP_MUX") == "1"
@@ -114,12 +113,23 @@ func main() {
 }
 ```
 
+```go
+// OR, you can use shorthand syntax to register providers:
+
+g := goic.New("/auth/o8", false)
+g.AddProvider(goic.Google.WithCredential(os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET")))
+g.AddProvider(goic.Microsoft.WithCredential(os.Getenv("MICROSOFT_CLIENT_ID"), os.Getenv("MICROSOFT_CLIENT_SECRET")))
+
+// ...
+```
+
 After having code like that, build the binary (`go build`) and run server program (`./<binary>`).
 
-You need to point `Login with <provider>`  button to `https://localhost/auth/o8/<provider>` for your end user.
+You need to point `Sign in with <provider>`  button to `https://localhost/auth/o8/<provider>` for your end user.
 For example:
 ```html
-<a href="https://localhost/auth/o8/google">Login with Google</a>
+<a href="https://localhost/auth/o8/google">Sign in with Google</a>
+<a href="https://localhost/auth/o8/microsoft">Sign in with Microsoft</a>
 ```
 
 The complete flow is managed and handled by GOIC for you and on successful verification,
@@ -135,7 +145,11 @@ when GOIC has new features.
 
 `GOIC` has been implemented in opensource project [adhocore/urlsh](https://github.com/adhocore/urlsh):
 
-> Visit [https://urlssh.xyz/auth/o8/google](https://urlssh.xyz/auth/o8/google)
+| Provider | Name | Demo URL |
+|----------|------|------------|
+| Google | google | [urlssh.xyz/auth/o8/google](https://urlssh.xyz/auth/o8/google) |
+| Microsoft | microsoft | [urlssh.xyz/auth/o8/microsoft](https://urlssh.xyz/auth/o8/microsoft) |
+
 
 On successful verification your information is [echoed back](https://github.com/adhocore/urlsh/blob/main/router/router.go#L48-L53) to you as JSON but **not** saved in server (pinky promise).
 

@@ -12,15 +12,15 @@ func main() {
 	// Init GOIC with a root uri and verbose mode (=true)
 	g := goic.New("/auth/o8", true)
 
-	// Register Google provider with name google and its auth URI
+	// Register Microsoft provider with name microsoft and its auth URI
 	// It will preemptively load well-known config and jwks keys
-	p := g.NewProvider("google", "https://accounts.google.com")
+	p := g.NewProvider("microsoft", "https://login.microsoftonline.com/common/v2.0")
 
-	// Configure credentials for Google provider
-	p.WithCredential(os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET"))
+	// Configure credentials for Microsoft provider
+	p.WithCredential(os.Getenv("MICROSOFT_CLIENT_ID"), os.Getenv("MICROSOFT_CLIENT_SECRET"))
 
 	// Configure scope
-	p.WithScope("openid email profile")
+	p.WithScope("openid email profile offline_access")
 
 	// Define a callback that will receive token and user info on successful verification
 	g.UserCallback(func(t *goic.Token, u *goic.User, w http.ResponseWriter, r *http.Request) {
@@ -48,7 +48,7 @@ func main() {
 	}
 
 	log.Println("Server running on https://localhost")
-	log.Println("            Visit https://localhost/auth/o8/google")
+	log.Println("            Visit https://localhost/auth/o8/microsoft")
 
 	// This is just example (don't copy it)
 	useMux := os.Getenv("GOIC_HTTP_MUX") == "1"

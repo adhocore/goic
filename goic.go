@@ -1,12 +1,10 @@
 package goic
 
 import (
-	"bytes"
 	"crypto/rsa"
 	"crypto/subtle"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -78,7 +76,7 @@ type Token struct {
 	IDToken      string `json:"id_token"`
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
-	Provider     string
+	Provider     string `json:"provider,omitempty"`
 	idToken      map[string]interface{}
 }
 
@@ -92,7 +90,7 @@ type User struct {
 	Name          string `json:"name"`
 	Picture       string `json:"picture,omitempty"`
 	Subject       string `json:"sub,omitempty"`
-	Error         error
+	Error         error  `json:"-"`
 }
 
 // New gives new GOIC instance
@@ -358,7 +356,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		}
 
 		if g.verbose {
-			log.Println("[err] goic request auth callback: " + msg)
+			log.Printf("[err] goic request auth callback: %s", msg)
 		}
 		http.Error(res, msg, http.StatusInternalServerError)
 		return
@@ -368,7 +366,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	if code == "" {
 		if err := g.RequestAuth(name, res, req); err != nil {
 			if g.verbose {
-				log.Println("[err] goic request auth: %v\n", err)
+				log.Printf("[err] goic request auth: %v\n", err)
 			}
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 		}
@@ -387,7 +385,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	tok, err := g.Authenticate(name, code, nonce, req)
 	if err != nil {
 		if g.verbose {
-			log.Printf("[err] goic request auth: %v\n", err)
+			log.Printf("[err] goic authenticate: %v\n", err)
 		}
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
@@ -395,7 +393,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 
 	if g.userCallback == nil {
 		res.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprintln(res, "OK, the auth flow is complete. However, backend is yet to request userinfo")
+		_, _ = res.Write([]byte("OK, the auth flow is complete. However, backend is yet to request userinfo"))
 		return
 	}
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -34,7 +33,7 @@ func main() {
 		log.Println("user: ", u)
 
 		// and tell the user it is all good:
-		_, _ = fmt.Fprintf(w, "All good, check backend console")
+		_, _ = w.Write([]byte("All good, check backend console"))
 	})
 
 	// Listen address for server, 443 for https as OpenID connect mandates it!
@@ -45,11 +44,11 @@ func main() {
 
 	// A catch-all dummy handler
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprintf(w, r.Method+" "+r.URL.Path+"\n")
+		_, _ = w.Write([]byte(r.Method + " " + r.URL.Path))
 	}
 
-	fmt.Println("Server running on https://localhost")
-	fmt.Println("            Visit https://localhost/auth/o8/google")
+	log.Println("Server running on https://localhost")
+	log.Println("            Visit https://localhost/auth/o8/google")
 
 	// This is just example (don't copy it)
 	useMux := os.Getenv("GOIC_HTTP_MUX") == "1"

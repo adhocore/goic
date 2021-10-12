@@ -124,6 +124,18 @@ func (g *Goic) NewProvider(name, uri string) *Provider {
 	return p
 }
 
+func (g *Goic) AddProvider(p *Provider) *Provider {
+	if p, ok := g.providers[p.Name]; ok {
+		return p
+	}
+	if _, err := p.getWellKnown(); err != nil {
+		log.Fatalf("goic provider %s: cannot load well-known configuration: %s", p.Name, err.Error())
+	}
+
+	g.providers[p.Name] = p
+	return p
+}
+
 // Supports checks if a given provider name is supported
 func (g *Goic) Supports(name string) bool {
 	_, ok := g.providers[name]

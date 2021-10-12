@@ -1,3 +1,25 @@
+## [v0.0.6](https://github.com/adhocore/goic/releases/tag/v0.0.6) (2021-10-12)
+
+### Features
+- Add ready instances of providers for google and microsoft (Jitendra Adhikari) [_55c2ba4_](https://github.com/adhocore/goic/commit/55c2ba4)
+- Add addProvider() (Jitendra Adhikari) [_a6b1524_](https://github.com/adhocore/goic/commit/a6b1524)
+
+### Bug Fixes
+- Switch to form-url-encoded from json (Jitendra Adhikari) [_1a4bc17_](https://github.com/adhocore/goic/commit/1a4bc17)
+
+### Internal Refactors
+- Google example (Jitendra Adhikari) [_cc94831_](https://github.com/adhocore/goic/commit/cc94831)
+- AQAB is frequently used and is is 65537 (Jitendra Adhikari) [_0ff7b85_](https://github.com/adhocore/goic/commit/0ff7b85)
+- Update json meta, error msg fmt, cleanup imports (Jitendra Adhikari) [_c8e4b92_](https://github.com/adhocore/goic/commit/c8e4b92)
+
+### Miscellaneous
+- Add example with all providers (Jitendra Adhikari) [_ee4e86b_](https://github.com/adhocore/goic/commit/ee4e86b)
+- Add microsoft example (Jitendra Adhikari) [_255794a_](https://github.com/adhocore/goic/commit/255794a)
+
+### Documentations
+- Update example, login anchor and demo section (Jitendra Adhikari) [_ab52e67_](https://github.com/adhocore/goic/commit/ab52e67)
+
+
 ## [v0.0.5](https://github.com/adhocore/goic/releases/tag/v0.0.5) (2021-10-11)
 
 ### Features

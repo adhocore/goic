@@ -1,3 +1,9 @@
+## [v0.0.7](https://github.com/adhocore/goic/releases/tag/v0.0.7) (2021-10-12)
+
+### Bug Fixes
+- Unset state only after successfully used (Jitendra Adhikari) [_6155d1d_](https://github.com/adhocore/goic/commit/6155d1d)
+
+
 ## [v0.0.6](https://github.com/adhocore/goic/releases/tag/v0.0.6) (2021-10-12)
 
 ### Features

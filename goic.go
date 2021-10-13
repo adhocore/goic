@@ -79,6 +79,7 @@ func New(uri string, verbose bool) *Goic {
 // It also preloads the well known config and jwks keys
 func (g *Goic) NewProvider(name, uri string) *Provider {
 	if p, ok := g.providers[name]; ok {
+		g.logIf("goic provider %s: already set", name)
 		return p
 	}
 
@@ -98,8 +99,10 @@ func (g *Goic) NewProvider(name, uri string) *Provider {
 
 func (g *Goic) AddProvider(p *Provider) *Provider {
 	if p, ok := g.providers[p.Name]; ok {
+		g.logIf("goic provider %s: already set", p.Name)
 		return p
 	}
+
 	if _, err := p.getWellKnown(); err != nil {
 		log.Fatalf("goic provider %s: cannot load well-known configuration: %s", p.Name, err.Error())
 	}
@@ -115,8 +118,10 @@ func (g *Goic) Supports(name string) bool {
 }
 
 // RequestAuth is the starting point of OpenID flow
-func (g *Goic) RequestAuth(name string, res http.ResponseWriter, req *http.Request) error {
-	p := g.providers[name]
+func (g *Goic) RequestAuth(p *Provider, res http.ResponseWriter, req *http.Request) error {
+	if !g.Supports(p.Name) {
+		return ErrProviderSupport
+	}
 
 	redir, err := http.NewRequest("GET", p.wellKnown.AuthURI, nil)
 	if err != nil {
@@ -169,10 +174,12 @@ func (g *Goic) checkState(state string) (string, error) {
 
 // Authenticate tries to authenticate a user by given code and nonce
 // It is where token is requested and validated
-func (g *Goic) Authenticate(name, code, nonce string, req *http.Request) (*Token, error) {
-	p, _ := g.providers[name]
+func (g *Goic) Authenticate(p *Provider, code, nonce, curl string) (*Token, error) {
+	if !g.Supports(p.Name) {
+		return &Token{Provider: p.Name}, ErrProviderSupport
+	}
 
-	tok, err := g.getToken(p, code, currentURL(req, false))
+	tok, err := g.getToken(p, code, curl)
 	if err != nil {
 		return tok, err
 	}
@@ -293,49 +300,39 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 
 	name := req.URL.Path[1+len(g.URIPrefix):]
 	if !g.Supports(name) {
-		http.Error(res, "Provider '"+name+"' not supported", http.StatusInternalServerError)
+		g.errorHTML(res, ErrProviderSupport, "", "process")
 		return
 	}
 
-	qry := req.URL.Query()
+	qry, curl := req.URL.Query(), currentURL(req, false)
+	restart := ` (<a href="` + curl + `">restart</a>)`
 	if msg := qry.Get("error"); msg != "" {
 		if desc := qry.Get("error_description"); desc != "" {
 			msg += ": " + desc
 		}
-
-		if g.verbose {
-			log.Printf("[err] goic request auth callback: %s", msg)
-		}
-		http.Error(res, msg, http.StatusInternalServerError)
+		g.errorHTML(res, errors.New(msg), restart, "callback")
 		return
 	}
 
 	code, state := qry.Get("code"), qry.Get("state")
+	p := g.providers[name]
 	if code == "" {
-		if err := g.RequestAuth(name, res, req); err != nil {
-			if g.verbose {
-				log.Printf("[err] goic request auth: %v\n", err)
-			}
-			http.Error(res, err.Error(), http.StatusInternalServerError)
+		if err := g.RequestAuth(p, res, req); err != nil {
+			g.errorHTML(res, err, restart, "request auth")
 		}
 		return
 	}
 
 	nonce, err := g.checkState(state)
 	if err != nil {
-		if g.verbose {
-			log.Printf("[err] goic check state: %v\n", err)
-		}
-		http.Error(res, err.Error(), http.StatusInternalServerError)
+		g.errorHTML(res, err, restart, "checkState")
 		return
 	}
 
-	tok, err := g.Authenticate(name, code, nonce, req)
+	retry := ` (<a href="` + currentURL(req, true) + `">retry</a>)`
+	tok, err := g.Authenticate(p, code, nonce, curl)
 	if err != nil {
-		if g.verbose {
-			log.Printf("[err] goic authenticate: %v\n", err)
-		}
-		http.Error(res, err.Error(), http.StatusInternalServerError)
+		g.errorHTML(res, err, retry, "authenticate")
 		return
 	}
 
@@ -398,6 +395,13 @@ func (g *Goic) logIf(s string, v ...interface{}) {
 	if g.verbose {
 		log.Printf(s, v...)
 	}
+}
+
+// errorHTML shows error page with html like text
+func (g *Goic) errorHTML(res http.ResponseWriter, err error, h, label string) {
+	g.logIf("[err] %s: %v\n", label, err)
+	res.Header().Set("content-type", "text/html")
+	http.Error(res, err.Error()+h, http.StatusInternalServerError)
 }
 
 func (g *Goic) UnsetState(s string) {

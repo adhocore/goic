@@ -70,27 +70,13 @@ type Goic struct {
 
 // Token represents token structure from well known token endpoint
 type Token struct {
-	Err          string `json:"error"`
-	ErrDesc      string `json:"error_description"`
-	AuthURI      string `json:"authorization_endpoint"`
+	Err          string `json:"error,omitempty"`
+	ErrDesc      string `json:"error_description,omitempty"`
+	AuthURI      string `json:"authorization_endpoint,omitempty"`
 	IDToken      string `json:"id_token"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken  string `json:"access_token,omitempty"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 	Provider     string `json:"provider,omitempty"`
-	idToken      map[string]interface{}
-}
-
-// User represents user from well know user info endpoint
-type User struct {
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified,omitempty"`
-	FamilyName    string `json:"family_name,omitempty"`
-	GivenName     string `json:"given_name,omitempty"`
-	Locale        string `json:"locale,omitempty"`
-	Name          string `json:"name"`
-	Picture       string `json:"picture,omitempty"`
-	Subject       string `json:"sub,omitempty"`
-	Error         error  `json:"-"`
 }
 
 // New gives new GOIC instance
@@ -390,12 +376,8 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	g.sLock.Lock()
-	delete(g.states, state)
-	g.sLock.Unlock()
-
+	g.UnsetState(state)
 	if g.userCallback == nil {
-		res.WriteHeader(http.StatusOK)
 		_, _ = res.Write([]byte("OK, the auth flow is complete. However, backend is yet to request userinfo"))
 		return
 	}
@@ -414,18 +396,18 @@ func (g *Goic) UserCallback(cb UserCallback) *Goic {
 func (g *Goic) UserInfo(tok *Token) *User {
 	user := &User{}
 	if !g.Supports(tok.Provider) {
-		return userErr(user, ErrProviderSupport)
+		return user.withError(ErrProviderSupport)
 	}
 
 	if tok.AccessToken == "" {
-		return userErr(user, ErrTokenAccessKey)
+		return user.withError(ErrTokenAccessKey)
 	}
 
 	p := g.providers[tok.Provider]
 
 	req, err := http.NewRequest("GET", p.wellKnown.UserInfoURI, nil)
 	if err != nil {
-		return userErr(user, err)
+		return user.withError(err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -433,18 +415,30 @@ func (g *Goic) UserInfo(tok *Token) *User {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return userErr(user, err)
+		return user.withError(err)
 	}
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return userErr(user, err)
+		return user.withError(err)
 	}
 
 	if err := json.Unmarshal(body, &user); err != nil {
-		return userErr(user, err)
+		return user.withError(err)
 	}
 
 	return user
+}
+
+func (g *Goic) logIf(s string, v ...interface{}) {
+	if g.verbose {
+		log.Printf(s, v...)
+	}
+}
+
+func (g *Goic) UnsetState(s string) {
+	g.sLock.Lock()
+	delete(g.states, s)
+	g.sLock.Unlock()
 }

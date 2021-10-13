@@ -86,9 +86,3 @@ func trapError(res http.ResponseWriter) {
 		http.Error(res, msg, http.StatusInternalServerError)
 	}
 }
-
-// userError embeds error to User
-func userErr(u *User, err error) *User {
-	u.Error = err
-	return u
-}

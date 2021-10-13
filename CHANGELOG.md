@@ -1,3 +1,14 @@
+## [v0.0.8](https://github.com/adhocore/goic/releases/tag/v0.0.8) (2021-10-13)
+
+### Internal Refactors
+- Add/use errorHTML() helper, validate provider, show retry url (Jitendra Adhikari) [_0c5431e_](https://github.com/adhocore/goic/commit/0c5431e)
+- Extract user and token struct and func (Jitendra Adhikari) [_931cb6e_](https://github.com/adhocore/goic/commit/931cb6e)
+- Extract user struct, unset state, log if verbose (Jitendra Adhikari) [_1192822_](https://github.com/adhocore/goic/commit/1192822)
+
+### Documentations
+- Update todo (Jitendra) [_b5fc8c2_](https://github.com/adhocore/goic/commit/b5fc8c2)
+
+
 ## [v0.0.7](https://github.com/adhocore/goic/releases/tag/v0.0.7) (2021-10-12)
 
 ### Bug Fixes

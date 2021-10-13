@@ -159,7 +159,7 @@ On successful verification your information is [echoed back](https://github.com/
 - Support refresh token grant_type
 - Tests and more tests
 - Release stable version
-- Support OpenID `Implicit Flow`
+- ~~Support OpenID `Implicit Flow`~~ [Check #3](https://github.com/adhocore/goic/issues/3)
 
 ## License
 

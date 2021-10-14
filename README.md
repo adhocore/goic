@@ -27,13 +27,15 @@ Let's say `/auth/o8`. Then the provider name follows it.
 All the OpenID providers that your server should support will need a unique name and each of the
 providers get a URI like so `/auth/o8/<name>`. Example:
 
-| Provider | Name | OpenID URI |
-|----------|------|------------|
-| Google | google | `/auth/o8/google` |
-| Microsoft | microsoft | `/auth/o8/microsoft` |
-| Yahoo | yahoo | `/auth/o8/yahoo` |
+| Provider | Name | OpenID URI | Demo URL |
+|----------|------|------------|----------|
+| Google | google | `/auth/o8/google` | [urlssh.xyz/auth/o8/google](https://urlssh.xyz/auth/o8/google) |
+| Microsoft | microsoft | `/auth/o8/microsoft` | [urlssh.xyz/auth/o8/microsoft](https://urlssh.xyz/auth/o8/microsoft) |
+| Yahoo | yahoo | `/auth/o8/yahoo` | [urlssh.xyz/auth/o8/yahoo](https://urlssh.xyz/auth/o8/yahoo) |
 
-> All the providers **must** provide .well-known configurations for OpenID auto discovery.
+> On successful verification your information is [echoed back](https://github.com/adhocore/urlsh/blob/main/router/router.go#L48-L53) to you as JSON but **not** saved in server (pinky promise).
+
+**Important:** All the providers **must** provide .well-known configurations for OpenID auto discovery.
 
 Get ready with OpenID provider credentials (client id and secret).
 For Google, check [this](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).

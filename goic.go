@@ -122,40 +122,26 @@ func (g *Goic) Supports(name string) bool {
 }
 
 // RequestAuth is the starting point of OpenID flow
-func (g *Goic) RequestAuth(p *Provider, res http.ResponseWriter, req *http.Request) error {
+func (g *Goic) RequestAuth(p *Provider, state, nonce, redir string, res http.ResponseWriter, req *http.Request) error {
 	if !g.Supports(p.Name) {
 		return ErrProviderSupport
 	}
 
-	redir, err := http.NewRequest("GET", p.wellKnown.AuthURI, nil)
+	redirect, err := http.NewRequest("GET", p.wellKnown.AuthURI, nil)
 	if err != nil {
 		return err
 	}
 
-	qry := redir.URL.Query()
+	qry := redirect.URL.Query()
 	qry.Add("response_type", "code")
-	qry.Add("redirect_uri", currentURL(req, false))
+	qry.Add("redirect_uri", redir)
 	qry.Add("client_id", p.clientID)
 	qry.Add("scope", p.Scope)
-
-	nonce, state := RandomString(nonceLength), RandomString(stateLength)
-
-	g.sLock.Lock()
-	for {
-		if _, ok := g.states[state]; !ok {
-			break
-		}
-		state = RandomString(stateLength)
-	}
-
-	g.states[state] = nonce
-	g.sLock.Unlock()
-
 	qry.Add("state", state)
 	qry.Add("nonce", nonce)
-	redir.URL.RawQuery = qry.Encode()
+	redirect.URL.RawQuery = qry.Encode()
 
-	http.Redirect(res, req, redir.URL.String(), http.StatusFound)
+	http.Redirect(res, req, redirect.URL.String(), http.StatusFound)
 	return nil
 }
 
@@ -325,7 +311,8 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	code, state := qry.Get("code"), qry.Get("state")
 	p := g.providers[name]
 	if code == "" {
-		if err := g.RequestAuth(p, res, req); err != nil {
+		state, nonce := g.initStateAndNonce()
+		if err := g.RequestAuth(p, state, nonce, redir, res, req); err != nil {
 			g.errorHTML(res, err, restart, "request auth")
 		}
 		return
@@ -349,6 +336,24 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	}
 
 	g.userCallback(tok, g.UserInfo(tok), res, req)
+}
+
+// initStateAndNonce inits one time state and nonce
+func (g *Goic) initStateAndNonce() (string, string) {
+	nonce, state := RandomString(nonceLength), RandomString(stateLength)
+
+	g.sLock.Lock()
+	for {
+		if _, ok := g.states[state]; !ok {
+			break
+		}
+		state = RandomString(stateLength)
+	}
+
+	g.states[state] = nonce
+	g.sLock.Unlock()
+
+	return state, nonce
 }
 
 // UserCallback sets a callback for post user verification

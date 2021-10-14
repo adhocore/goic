@@ -170,6 +170,7 @@ func (g *Goic) checkState(state string) (string, error) {
 		return "", ErrProviderState
 	}
 
+	delete(g.states, state)
 	return nonce, nil
 }
 
@@ -329,14 +330,12 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	retry := ` (<a href="` + currentURL(req, true) + `">retry</a>)`
 	tok, err := g.Authenticate(p, code, nonce, curl)
 	if err != nil {
-		g.errorHTML(res, err, retry, "authenticate")
+		g.errorHTML(res, err, restart, "authenticate")
 		return
 	}
 
-	g.UnsetState(state)
 	if g.userCallback == nil {
 		_, _ = res.Write([]byte("OK, the auth flow is complete. However, backend is yet to request userinfo"))
 		return
@@ -400,8 +399,12 @@ func (g *Goic) logIf(s string, v ...interface{}) {
 // errorHTML shows error page with html like text
 func (g *Goic) errorHTML(res http.ResponseWriter, err error, h, label string) {
 	g.logIf("[err] %s: %v\n", label, err)
-	res.Header().Set("content-type", "text/html")
-	http.Error(res, err.Error()+h, http.StatusInternalServerError)
+
+	res.Header().Set("Content-Type", "text/html; charset=utf-8")
+	res.Header().Set("X-Content-Type-Options", "nosniff")
+	res.WriteHeader(http.StatusInternalServerError)
+
+	_, _ = res.Write([]byte(err.Error() + h))
 }
 
 func (g *Goic) UnsetState(s string) {

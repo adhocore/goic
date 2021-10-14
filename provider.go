@@ -55,6 +55,12 @@ var Google = &Provider{
 	Scope: "openid email profile",
 }
 
+var Yahoo = &Provider{
+	Name:  "yahoo",
+	URL:   "https://login.yahoo.com",
+	Scope: "openid openid2 email profile",
+}
+
 // WithCredential sets client id and secret for a Provider
 func (p *Provider) WithCredential(id, secret string) *Provider {
 	if id == "" || secret == "" {

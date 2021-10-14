@@ -1,3 +1,23 @@
+## [v0.0.9](https://github.com/adhocore/goic/releases/tag/v0.0.9) (2021-10-14)
+
+### Features
+- Add Yahoo provider (Jitendra Adhikari) [_d9d12af_](https://github.com/adhocore/goic/commit/d9d12af)
+- Support ecdsa key/algo (Jitendra Adhikari) [_68866a1_](https://github.com/adhocore/goic/commit/68866a1)
+- Support ecdsa key/algo (Jitendra Adhikari) [_1079448_](https://github.com/adhocore/goic/commit/1079448)
+
+### Bug Fixes
+- Key check order/clause for rsa and ec (Jitendra Adhikari) [_9f29c79_](https://github.com/adhocore/goic/commit/9f29c79)
+
+### Internal Refactors
+- Delete state immediately, fix error HTML (Jitendra Adhikari) [_3db1dff_](https://github.com/adhocore/goic/commit/3db1dff)
+
+### Miscellaneous
+- Update yahoo example (Jitendra Adhikari) [_f223c06_](https://github.com/adhocore/goic/commit/f223c06)
+
+### Documentations
+- Add yahoo demo (Jitendra Adhikari) [_803e8e4_](https://github.com/adhocore/goic/commit/803e8e4)
+
+
 ## [v0.0.8](https://github.com/adhocore/goic/releases/tag/v0.0.8) (2021-10-13)
 
 ### Internal Refactors

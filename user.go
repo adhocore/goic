@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-// User represents user from well know user info endpoint
+// User represents user from well known user info endpoint
 type User struct {
 	Email         string `json:"email"`
 	EmailVerified bool   `json:"email_verified,omitempty"`
@@ -25,7 +25,6 @@ type User struct {
 type Token struct {
 	Err          string `json:"error,omitempty"`
 	ErrDesc      string `json:"error_description,omitempty"`
-	AuthURI      string `json:"authorization_endpoint,omitempty"`
 	IDToken      string `json:"id_token"`
 	AccessToken  string `json:"access_token,omitempty"`
 	RefreshToken string `json:"refresh_token,omitempty"`

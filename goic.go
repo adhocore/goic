@@ -28,6 +28,9 @@ var (
 	// ErrTokenInvalid is error for invalid token
 	ErrTokenInvalid = errors.New("goic id_token: invalid id_token")
 
+	// ErrRefreshTokenInvalid is error for invalid token
+	ErrRefreshTokenInvalid = errors.New("goic id_token: invalid refresh_token")
+
 	// ErrTokenClaims is error for invalid token claims
 	ErrTokenClaims = errors.New("goic id_token: invalid id_token claims")
 
@@ -119,40 +122,26 @@ func (g *Goic) Supports(name string) bool {
 }
 
 // RequestAuth is the starting point of OpenID flow
-func (g *Goic) RequestAuth(p *Provider, res http.ResponseWriter, req *http.Request) error {
+func (g *Goic) RequestAuth(p *Provider, state, nonce, redir string, res http.ResponseWriter, req *http.Request) error {
 	if !g.Supports(p.Name) {
 		return ErrProviderSupport
 	}
 
-	redir, err := http.NewRequest("GET", p.wellKnown.AuthURI, nil)
+	redirect, err := http.NewRequest("GET", p.wellKnown.AuthURI, nil)
 	if err != nil {
 		return err
 	}
 
-	qry := redir.URL.Query()
+	qry := redirect.URL.Query()
 	qry.Add("response_type", "code")
-	qry.Add("redirect_uri", currentURL(req, false))
+	qry.Add("redirect_uri", redir)
 	qry.Add("client_id", p.clientID)
 	qry.Add("scope", p.Scope)
-
-	nonce, state := RandomString(nonceLength), RandomString(stateLength)
-
-	g.sLock.Lock()
-	for {
-		if _, ok := g.states[state]; !ok {
-			break
-		}
-		state = RandomString(stateLength)
-	}
-
-	g.states[state] = nonce
-	g.sLock.Unlock()
-
 	qry.Add("state", state)
 	qry.Add("nonce", nonce)
-	redir.URL.RawQuery = qry.Encode()
+	redirect.URL.RawQuery = qry.Encode()
 
-	http.Redirect(res, req, redir.URL.String(), http.StatusFound)
+	http.Redirect(res, req, redirect.URL.String(), http.StatusFound)
 	return nil
 }
 
@@ -176,12 +165,12 @@ func (g *Goic) checkState(state string) (string, error) {
 
 // Authenticate tries to authenticate a user by given code and nonce
 // It is where token is requested and validated
-func (g *Goic) Authenticate(p *Provider, code, nonce, curl string) (*Token, error) {
+func (g *Goic) Authenticate(p *Provider, code, nonce, redir string) (*Token, error) {
 	if !g.Supports(p.Name) {
 		return &Token{Provider: p.Name}, ErrProviderSupport
 	}
 
-	tok, err := g.getToken(p, code, curl)
+	tok, err := g.getToken(p, code, redir, "authorization_code")
 	if err != nil {
 		return tok, err
 	}
@@ -194,13 +183,17 @@ func (g *Goic) Authenticate(p *Provider, code, nonce, curl string) (*Token, erro
 }
 
 // getToken actually gets token from Provider via wellKnown.TokenURI
-func (g *Goic) getToken(p *Provider, code, redir string) (*Token, error) {
+func (g *Goic) getToken(p *Provider, code, redir, grant string) (*Token, error) {
 	tok := &Token{Provider: p.Name}
 
 	qry := url.Values{}
-	qry.Add("grant_type", "authorization_code")
-	qry.Add("code", code)
-	qry.Add("redirect_uri", redir)
+	qry.Add("grant_type", grant)
+	if grant == "authorization_code" {
+		qry.Add("code", code)
+		qry.Add("redirect_uri", redir)
+	} else {
+		qry.Add("refresh_token", code)
+	}
 	qry.Add("client_id", p.clientID)
 	qry.Add("client_secret", p.clientSecret)
 
@@ -305,8 +298,8 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	qry, curl := req.URL.Query(), currentURL(req, false)
-	restart := ` (<a href="` + curl + `">restart</a>)`
+	qry, redir := req.URL.Query(), currentURL(req, false)
+	restart := ` (<a href="` + redir + `">restart</a>)`
 	if msg := qry.Get("error"); msg != "" {
 		if desc := qry.Get("error_description"); desc != "" {
 			msg += ": " + desc
@@ -318,7 +311,8 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	code, state := qry.Get("code"), qry.Get("state")
 	p := g.providers[name]
 	if code == "" {
-		if err := g.RequestAuth(p, res, req); err != nil {
+		state, nonce := g.initStateAndNonce()
+		if err := g.RequestAuth(p, state, nonce, redir, res, req); err != nil {
 			g.errorHTML(res, err, restart, "request auth")
 		}
 		return
@@ -330,7 +324,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	tok, err := g.Authenticate(p, code, nonce, curl)
+	tok, err := g.Authenticate(p, code, nonce, redir)
 	if err != nil {
 		g.errorHTML(res, err, restart, "authenticate")
 		return
@@ -342,6 +336,24 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 	}
 
 	g.userCallback(tok, g.UserInfo(tok), res, req)
+}
+
+// initStateAndNonce inits one time state and nonce
+func (g *Goic) initStateAndNonce() (string, string) {
+	nonce, state := RandomString(nonceLength), RandomString(stateLength)
+
+	g.sLock.Lock()
+	for {
+		if _, ok := g.states[state]; !ok {
+			break
+		}
+		state = RandomString(stateLength)
+	}
+
+	g.states[state] = nonce
+	g.sLock.Unlock()
+
+	return state, nonce
 }
 
 // UserCallback sets a callback for post user verification
@@ -390,6 +402,26 @@ func (g *Goic) UserInfo(tok *Token) *User {
 	return user
 }
 
+// RefreshToken gets new access token using the refresh token
+func (g *Goic) RefreshToken(tok *Token) (*Token, error) {
+	name := tok.Provider
+	if !g.Supports(name) {
+		return nil, ErrProviderSupport
+	}
+	if tok.RefreshToken == "" {
+		return nil, ErrRefreshTokenInvalid
+	}
+
+	p := g.providers[name]
+	t, err := g.getToken(p, tok.RefreshToken, "", "refresh_token")
+	if err == ErrTokenEmpty {
+		err = nil
+	}
+
+	return t, err
+}
+
+// logIf logs if verbose is set
 func (g *Goic) logIf(s string, v ...interface{}) {
 	if g.verbose {
 		log.Printf(s, v...)

@@ -42,7 +42,7 @@ To use the example below you need to export `GOOGLE_CLIENT_ID` and `GOOGLE_CLIEN
 You also need to configure application domain and redirect URI in the Provider console/dashboard.
 (redirect URI is same as OpenID URI in above table).
 
-Below is an example code but instead of copy/pasting it entirely you can use it for reference.
+Below is an example for authorization code flow but instead of copy/pasting it entirely you can use it for reference.
 
 ```go
 package main
@@ -144,6 +144,83 @@ when GOIC has new features.
 
 > The example and discussion here assume `localhost` domain so adjust that accordingly for your domains.
 
+---
+## GOIC API
+
+GOIC supports full end-to-end for Authorization Code Flow, however if you want to manually interact, here's summary of API:
+
+#### Check Provider
+
+```go
+g := goic.New("/auth/o8", false)
+g.NewProvider("abc", "...").WithCredential("...", "...")
+
+g.Supports("abc") // true
+g.Supports("xyz") // false
+```
+
+#### Refresh Token
+
+Use it to request Access token by using refresh token.
+
+```go
+g := goic.New("/auth/o8", false)
+t := &goic.Token{RefreshToken: "your refresh token", Provider: goic.Microsoft.Name}
+tok, err := g.RefreshToken(t)
+// Do something with tok.AccessToken
+```
+
+#### Auth Request
+
+Manually request authentication from OpenID Provider.
+
+```go
+g := goic.New("/auth/o8", false)
+p := g.NewProvider("abc", "...").WithCredential("...", "...")
+
+// Generate random unique state and nonce
+state, nonce := goic.RandomString(24), goic.RandomString(24)
+// You must save them to cookie/session, so it can be retrieved later for crosscheck
+
+// redir is the redirect url in your host for provider of interest
+redir := "https://localhost/auth/o8/" + p.Name
+
+// Redirects to provider first and then back to above redir url
+// res = http.ResponseWriter, req = *http.Request
+err := g.RequestAuth(p, state, nonce, redir, res, req)
+```
+
+#### Authentication
+
+Manually attempt to authenticate after the request comes back from OpenID Provider.
+
+```go
+g := goic.New("/auth/o8", false)
+p := g.NewProvider("abc", "...").WithCredential("...", "...")
+
+// Read openid provider code from query param, and nonce from cookie/session etc
+// PS: Validate that the nonce is relevant to the state sent by openid provider
+code, nonce := "", ""
+
+// redir is the redirect url in your host for provider of interest
+redir := "https://localhost/auth/o8/" + p.Name
+
+tok, err := g.Authenticate(p, code, nonce, redir)
+```
+
+### Userinfo
+
+Manually request Userinfo by using the token returned by Authentication above.
+```go
+g := goic.New("/auth/o8", false)
+p := g.NewProvider("abc", "...").WithCredential("...", "...")
+// ...
+tok, err := g.Authenticate(p, code, nonce, redir)
+user := g.UserInfo(tok)
+err := user.Error
+```
+
+---
 ### Demo
 
 `GOIC` has been implemented in opensource project [adhocore/urlsh](https://github.com/adhocore/urlsh):

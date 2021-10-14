@@ -259,11 +259,11 @@ func (g *Goic) verifyToken(p *Provider, tok *Token, nonce string) error {
 
 		for _, key := range p.wellKnown.jwks.Keys {
 			kid := key.Kid == t.Header["kid"]
-			if kid && key.Kty == "RSA" && key.Alg == alg {
-				return &rsa.PublicKey{E: ParseExponent(key.E), N: ParseModulo(key.N)}, nil
-			}
 			if kid && key.Kty == "EC" && key.Alg == alg {
 				return &ecdsa.PublicKey{X: ParseModulo(key.X), Y: ParseModulo(key.Y), Curve: GetCurve(key.Crv)}, nil
+			}
+			if kid && (key.Kty == "RSA" || key.Alg == alg) {
+				return &rsa.PublicKey{E: ParseExponent(key.E), N: ParseModulo(key.N)}, nil
 			}
 		}
 

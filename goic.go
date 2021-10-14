@@ -1,6 +1,7 @@
 package goic
 
 import (
+	"crypto/ecdsa"
 	"crypto/rsa"
 	"encoding/json"
 	"errors"
@@ -245,24 +246,23 @@ func (g *Goic) verifyToken(p *Provider, tok *Token, nonce string) error {
 		return err
 	}
 
-	// todo: is this ok here?
-	if p.wellKnown.KeysURI == "" {
-		return nil
-	}
-
 	_, err = jwt.ParseWithClaims(tok.IDToken, claims, func(t *jwt.Token) (interface{}, error) {
 		alg := t.Header["alg"].(string)
-		if alg == "HS256" || alg == "HS384" || alg == "HS512" {
+		al2 := alg[0:2]
+		if al2 == "HS" {
 			return []byte(p.clientSecret), nil
 		}
-
-		if alg != "RS256" && alg != "RS384" && alg != "RS512" {
+		if al2 != "RS" && al2 != "ES" {
 			return nil, ErrTokenAlgo
 		}
 
 		for _, key := range p.wellKnown.jwks.Keys {
-			if (key.Kty == "RSA" && key.Kid == t.Header["kid"]) || (key.Alg == alg && key.Kid == t.Header["kid"]) {
+			kid := key.Kid == t.Header["kid"]
+			if kid && key.Kty == "RSA" && key.Alg == alg {
 				return &rsa.PublicKey{E: ParseExponent(key.E), N: ParseModulo(key.N)}, nil
+			}
+			if kid && key.Kty == "EC" && key.Alg == alg {
+				return &ecdsa.PublicKey{X: ParseModulo(key.X), Y: ParseModulo(key.Y), Curve: GetCurve(key.Crv)}, nil
 			}
 		}
 

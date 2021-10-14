@@ -28,6 +28,9 @@ var (
 	// ErrTokenInvalid is error for invalid token
 	ErrTokenInvalid = errors.New("goic id_token: invalid id_token")
 
+	// ErrRefreshTokenInvalid is error for invalid token
+	ErrRefreshTokenInvalid = errors.New("goic id_token: invalid refresh_token")
+
 	// ErrTokenClaims is error for invalid token claims
 	ErrTokenClaims = errors.New("goic id_token: invalid id_token claims")
 
@@ -194,13 +197,17 @@ func (g *Goic) Authenticate(p *Provider, code, nonce, curl string) (*Token, erro
 }
 
 // getToken actually gets token from Provider via wellKnown.TokenURI
-func (g *Goic) getToken(p *Provider, code, redir string) (*Token, error) {
+func (g *Goic) getToken(p *Provider, code, redir, grant string) (*Token, error) {
 	tok := &Token{Provider: p.Name}
 
 	qry := url.Values{}
-	qry.Add("grant_type", "authorization_code")
-	qry.Add("code", code)
-	qry.Add("redirect_uri", redir)
+	qry.Add("grant_type", grant)
+	if grant == "authorization_code" {
+		qry.Add("code", code)
+		qry.Add("redirect_uri", redir)
+	} else {
+		qry.Add("refresh_token", code)
+	}
 	qry.Add("client_id", p.clientID)
 	qry.Add("client_secret", p.clientSecret)
 
@@ -390,6 +397,26 @@ func (g *Goic) UserInfo(tok *Token) *User {
 	return user
 }
 
+// RefreshToken gets new access token using the refresh token
+func (g *Goic) RefreshToken(tok *Token) (*Token, error) {
+	name := tok.Provider
+	if !g.Supports(name) {
+		return nil, ErrProviderSupport
+	}
+	if tok.RefreshToken == "" {
+		return nil, ErrRefreshTokenInvalid
+	}
+
+	p := g.providers[name]
+	t, err := g.getToken(p, tok.RefreshToken, "", "refresh_token")
+	if err == ErrTokenEmpty {
+		err = nil
+	}
+
+	return t, err
+}
+
+// logIf logs if verbose is set
 func (g *Goic) logIf(s string, v ...interface{}) {
 	if g.verbose {
 		log.Printf(s, v...)

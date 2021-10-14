@@ -1,3 +1,21 @@
+## [v0.0.10](https://github.com/adhocore/goic/releases/tag/v0.0.10) (2021-10-14)
+
+### Features
+- Support refresh_token grant (Jitendra Adhikari) [_27b2267_](https://github.com/adhocore/goic/commit/27b2267)
+
+### Internal Refactors
+- Rename func arg, fix auth code grant (Jitendra Adhikari) [_a8ed467_](https://github.com/adhocore/goic/commit/a8ed467)
+- Make RequestAuth able to be used standalone from outside (Jitendra Adhikari) [_cfec49a_](https://github.com/adhocore/goic/commit/cfec49a)
+
+### Miscellaneous
+- Use printf (Jitendra Adhikari) [_0cb25d8_](https://github.com/adhocore/goic/commit/0cb25d8)
+- Update docs, cleanup unused (Jitendra Adhikari) [_1bdb0cd_](https://github.com/adhocore/goic/commit/1bdb0cd)
+
+### Documentations
+- Add detailed API docs for standalone/manual usage (Jitendra Adhikari) [_26ac14e_](https://github.com/adhocore/goic/commit/26ac14e)
+- Add yahoo docs (Jitendra Adhikari) [_af8126f_](https://github.com/adhocore/goic/commit/af8126f)
+
+
 ## [v0.0.9](https://github.com/adhocore/goic/releases/tag/v0.0.9) (2021-10-14)
 
 ### Features

@@ -29,11 +29,14 @@ type WellKnown struct {
 	jwks        struct {
 		Keys []struct {
 			Alg string `json:"alg"`
-			Use string `json:"use"`
+			Use string `json:"use,omitempty"`
 			Kid string `json:"kid"`
 			Kty string `json:"kty"`
-			E   string `json:"e"`
-			N   string `json:"n"`
+			Crv string `json:"crv,omitempty"`
+			E   string `json:"e,omitempty"`
+			N   string `json:"n,omitempty"`
+			X   string `json:"x,omitempty"`
+			Y   string `json:"y,omitempty"`
 		}
 	}
 }
@@ -50,6 +53,12 @@ var Google = &Provider{
 	Name:  "google",
 	URL:   "https://accounts.google.com",
 	Scope: "openid email profile",
+}
+
+var Yahoo = &Provider{
+	Name:  "yahoo",
+	URL:   "https://login.yahoo.com",
+	Scope: "openid openid2 email profile",
 }
 
 // WithCredential sets client id and secret for a Provider

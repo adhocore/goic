@@ -1,6 +1,7 @@
 package goic
 
 import (
+	"crypto/ecdsa"
 	"crypto/rsa"
 	"encoding/json"
 	"errors"
@@ -169,6 +170,7 @@ func (g *Goic) checkState(state string) (string, error) {
 		return "", ErrProviderState
 	}
 
+	delete(g.states, state)
 	return nonce, nil
 }
 
@@ -245,23 +247,22 @@ func (g *Goic) verifyToken(p *Provider, tok *Token, nonce string) error {
 		return err
 	}
 
-	// todo: is this ok here?
-	if p.wellKnown.KeysURI == "" {
-		return nil
-	}
-
 	_, err = jwt.ParseWithClaims(tok.IDToken, claims, func(t *jwt.Token) (interface{}, error) {
 		alg := t.Header["alg"].(string)
-		if alg == "HS256" || alg == "HS384" || alg == "HS512" {
+		al2 := alg[0:2]
+		if al2 == "HS" {
 			return []byte(p.clientSecret), nil
 		}
-
-		if alg != "RS256" && alg != "RS384" && alg != "RS512" {
+		if al2 != "RS" && al2 != "ES" {
 			return nil, ErrTokenAlgo
 		}
 
 		for _, key := range p.wellKnown.jwks.Keys {
-			if (key.Kty == "RSA" && key.Kid == t.Header["kid"]) || (key.Alg == alg && key.Kid == t.Header["kid"]) {
+			kid := key.Kid == t.Header["kid"]
+			if kid && key.Kty == "EC" && key.Alg == alg {
+				return &ecdsa.PublicKey{X: ParseModulo(key.X), Y: ParseModulo(key.Y), Curve: GetCurve(key.Crv)}, nil
+			}
+			if kid && (key.Kty == "RSA" || key.Alg == alg) {
 				return &rsa.PublicKey{E: ParseExponent(key.E), N: ParseModulo(key.N)}, nil
 			}
 		}
@@ -329,14 +330,12 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	retry := ` (<a href="` + currentURL(req, true) + `">retry</a>)`
 	tok, err := g.Authenticate(p, code, nonce, curl)
 	if err != nil {
-		g.errorHTML(res, err, retry, "authenticate")
+		g.errorHTML(res, err, restart, "authenticate")
 		return
 	}
 
-	g.UnsetState(state)
 	if g.userCallback == nil {
 		_, _ = res.Write([]byte("OK, the auth flow is complete. However, backend is yet to request userinfo"))
 		return
@@ -400,8 +399,12 @@ func (g *Goic) logIf(s string, v ...interface{}) {
 // errorHTML shows error page with html like text
 func (g *Goic) errorHTML(res http.ResponseWriter, err error, h, label string) {
 	g.logIf("[err] %s: %v\n", label, err)
-	res.Header().Set("content-type", "text/html")
-	http.Error(res, err.Error()+h, http.StatusInternalServerError)
+
+	res.Header().Set("Content-Type", "text/html; charset=utf-8")
+	res.Header().Set("X-Content-Type-Options", "nosniff")
+	res.WriteHeader(http.StatusInternalServerError)
+
+	_, _ = res.Write([]byte(err.Error() + h))
 }
 
 func (g *Goic) UnsetState(s string) {

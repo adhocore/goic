@@ -119,6 +119,7 @@ func main() {
 g := goic.New("/auth/o8", false)
 g.AddProvider(goic.Google.WithCredential(os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET")))
 g.AddProvider(goic.Microsoft.WithCredential(os.Getenv("MICROSOFT_CLIENT_ID"), os.Getenv("MICROSOFT_CLIENT_SECRET")))
+g.AddProvider(goic.Yahoo.WithCredential(os.Getenv("YAHOO_CLIENT_ID"), os.Getenv("YAHOO_CLIENT_SECRET")))
 
 // ...
 ```
@@ -149,7 +150,7 @@ when GOIC has new features.
 |----------|------|------------|
 | Google | google | [urlssh.xyz/auth/o8/google](https://urlssh.xyz/auth/o8/google) |
 | Microsoft | microsoft | [urlssh.xyz/auth/o8/microsoft](https://urlssh.xyz/auth/o8/microsoft) |
-
+| Yahoo | yahoo | [urlssh.xyz/auth/o8/yahoo](https://urlssh.xyz/auth/o8/yahoo) |
 
 On successful verification your information is [echoed back](https://github.com/adhocore/urlsh/blob/main/router/router.go#L48-L53) to you as JSON but **not** saved in server (pinky promise).
 

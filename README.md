@@ -31,6 +31,7 @@ providers get a URI like so `/auth/o8/<name>`. Example:
 |----------|------|------------|
 | Google | google | `/auth/o8/google` |
 | Microsoft | microsoft | `/auth/o8/microsoft` |
+| Yahoo | yahoo | `/auth/o8/yahoo` |
 
 > All the providers **must** provide .well-known configurations for OpenID auto discovery.
 
@@ -131,6 +132,7 @@ For example:
 ```html
 <a href="https://localhost/auth/o8/google">Sign in with Google</a>
 <a href="https://localhost/auth/o8/microsoft">Sign in with Microsoft</a>
+<a href="https://localhost/auth/o8/yahoo">Sign in with Yahoo</a>
 ```
 
 The complete flow is managed and handled by GOIC for you and on successful verification,

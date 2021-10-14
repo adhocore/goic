@@ -57,6 +57,7 @@ func ParseExponent(es string) int {
 	return int(new(big.Int).SetBytes(buf).Uint64())
 }
 
+// GetCurve gets the elliptic.Curve from last 3 chars of string s
 func GetCurve(s string) elliptic.Curve {
 	s3 := s[len(s)-3:]
 	if s3 == "256" {

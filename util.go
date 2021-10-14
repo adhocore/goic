@@ -1,7 +1,9 @@
 package goic
 
 import (
+	"crypto/elliptic"
 	"encoding/base64"
+	"log"
 	"math/big"
 	"math/rand"
 	"net/http"
@@ -55,6 +57,18 @@ func ParseExponent(es string) int {
 	return int(new(big.Int).SetBytes(buf).Uint64())
 }
 
+func GetCurve(s string) elliptic.Curve {
+	s3 := s[len(s)-3:]
+	if s3 == "256" {
+		return elliptic.P256()
+	} else if s3 == "384" {
+		return elliptic.P384()
+	} else if s3 == "521" {
+		return elliptic.P521()
+	}
+	return elliptic.P224()
+}
+
 // currentURL gets the current request URL with/without query
 func currentURL(req *http.Request, query bool) string {
 	u := req.URL
@@ -80,6 +94,7 @@ func trapError(res http.ResponseWriter) {
 	if rec := recover(); rec != nil {
 		switch typ := rec.(type) {
 		case error:
+			log.Printf("goic uncaught: %v\n", typ)
 			msg = typ.Error()
 		}
 

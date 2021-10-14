@@ -165,12 +165,12 @@ func (g *Goic) checkState(state string) (string, error) {
 
 // Authenticate tries to authenticate a user by given code and nonce
 // It is where token is requested and validated
-func (g *Goic) Authenticate(p *Provider, code, nonce, curl string) (*Token, error) {
+func (g *Goic) Authenticate(p *Provider, code, nonce, redir string) (*Token, error) {
 	if !g.Supports(p.Name) {
 		return &Token{Provider: p.Name}, ErrProviderSupport
 	}
 
-	tok, err := g.getToken(p, code, curl)
+	tok, err := g.getToken(p, code, redir, "authorization_code")
 	if err != nil {
 		return tok, err
 	}
@@ -298,8 +298,8 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	qry, curl := req.URL.Query(), currentURL(req, false)
-	restart := ` (<a href="` + curl + `">restart</a>)`
+	qry, redir := req.URL.Query(), currentURL(req, false)
+	restart := ` (<a href="` + redir + `">restart</a>)`
 	if msg := qry.Get("error"); msg != "" {
 		if desc := qry.Get("error_description"); desc != "" {
 			msg += ": " + desc
@@ -324,7 +324,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	tok, err := g.Authenticate(p, code, nonce, curl)
+	tok, err := g.Authenticate(p, code, nonce, redir)
 	if err != nil {
 		g.errorHTML(res, err, restart, "authenticate")
 		return

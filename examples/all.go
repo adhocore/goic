@@ -15,7 +15,7 @@ func main() {
 	g.AddProvider(goic.Yahoo.WithCredential(os.Getenv("YAHOO_CLIENT_ID"), os.Getenv("YAHOO_CLIENT_SECRET")))
 
 	g.UserCallback(func(t *goic.Token, u *goic.User, w http.ResponseWriter, r *http.Request) {
-		log.Println("token: ", t, "\nuser: ", u)
+		log.Printf("token: %v\nuser: %v\n", t, u)
 		_, _ = w.Write([]byte("All good, check backend console"))
 	})
 

@@ -433,19 +433,19 @@ func (g *Goic) SignOut(tok *Token, redir string, res http.ResponseWriter, req *h
 		}
 	}
 
-	name := tok.Provider
-	if !g.Supports(name) {
+	p, ok := g.providers[tok.Provider]
+	if !ok || p.wellKnown.SignOutURI == "" {
 		return ErrProviderSupport
 	}
 
 	tk := tok.AccessToken
 	if tk == "" && tok.RefreshToken != "" {
 		tk = tok.RefreshToken
-	} else {
+	}
+	if tk == "" {
 		return ErrTokenAccessKey
 	}
 
-	p := g.providers[tok.Provider]
 	redirect, err := http.NewRequest("GET", p.wellKnown.SignOutURI, nil)
 	if err != nil {
 		return err

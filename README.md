@@ -10,7 +10,6 @@
 
 GOIC, **Go Open ID Connect**, is OpenID connect client library for Golang.
 It supports the *Authorization Code Flow* of OpenID Connect specification.
-It doesn't yet support `refresh_token` grant type and that will be added later.
 
 It is a weekend hack project and is work in progress and not production ready yet.
 

@@ -1,3 +1,20 @@
+## [v0.0.11](https://github.com/adhocore/goic/releases/tag/v0.0.11) (2021-10-15)
+
+### Features
+- Add signout method, it needs to be called programattically (Jitendra Adhikari) [_b1783b4_](https://github.com/adhocore/goic/commit/b1783b4)
+
+### Bug Fixes
+- Provider may not even suppport signout (Jitendra Adhikari) [_25dde2a_](https://github.com/adhocore/goic/commit/25dde2a)
+
+### Miscellaneous
+- Signout example (Jitendra Adhikari) [_c7ee172_](https://github.com/adhocore/goic/commit/c7ee172)
+
+### Documentations
+- For signout (Jitendra Adhikari) [_8a55865_](https://github.com/adhocore/goic/commit/8a55865)
+- Update todo (Jitendra) [_a3d6e4a_](https://github.com/adhocore/goic/commit/a3d6e4a)
+- Update (Jitendra) [_f4b2b18_](https://github.com/adhocore/goic/commit/f4b2b18)
+
+
 ## [v0.0.10](https://github.com/adhocore/goic/releases/tag/v0.0.10) (2021-10-14)
 
 ### Features

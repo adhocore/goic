@@ -167,6 +167,7 @@ Use it to request Access token by using refresh token.
 
 ```go
 g := goic.New("/auth/o8", false)
+// ... add providers
 t := &goic.Token{RefreshToken: "your refresh token", Provider: goic.Microsoft.Name}
 tok, err := g.RefreshToken(t)
 // Do something with tok.AccessToken
@@ -238,10 +239,10 @@ On successful verification your information is [echoed back](https://github.com/
 ---
 # TODO
 
-- Support refresh token grant_type
-- Tests and more tests
-- Release stable version
-- ~~Support OpenID `Implicit Flow`~~ [Check #3](https://github.com/adhocore/goic/issues/3)
+- [X] ~~Support refresh token grant_type~~ [Check #2](https://github.com/adhocore/goic/issues/2)
+- [ ] Tests and more tests
+- [ ] Release stable version
+- [x] ~~Support OpenID `Implicit Flow`~~ [Check #3](https://github.com/adhocore/goic/issues/3)
 
 ## License
 

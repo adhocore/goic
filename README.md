@@ -149,6 +149,7 @@ when GOIC has new features.
 ### Signing out
 
 For signing out you need to manually invoke `g.SignOut()` from within http context. See the [API](#signout) below.
+There is also a working [example](./examples/all.go). Note that not all Providers support signing out.
 
 ---
 ## GOIC API

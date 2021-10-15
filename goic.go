@@ -48,6 +48,9 @@ var (
 
 	// ErrTokenAccessKey is error for invalid access_token
 	ErrTokenAccessKey = errors.New("goic id_token: invalid access_token")
+
+	// ErrSignOutRedir is error for invalid post sign-out redirect uri
+	ErrSignOutRedir = errors.New("goic sign-out: post redirect uri is invalid")
 )
 
 var (
@@ -419,6 +422,44 @@ func (g *Goic) RefreshToken(tok *Token) (*Token, error) {
 	}
 
 	return t, err
+}
+
+// SignOut signs out the Token from OpenID Provider and then redirects to given URI
+// Redirect URI must be preconfigured in OpenID Provider already
+func (g *Goic) SignOut(tok *Token, redir string, res http.ResponseWriter, req *http.Request) error {
+	if redir != "" {
+		if _, err := url.Parse(redir); err != nil {
+			return ErrSignOutRedir
+		}
+	}
+
+	p, ok := g.providers[tok.Provider]
+	if !ok || p.wellKnown.SignOutURI == "" {
+		return ErrProviderSupport
+	}
+
+	tk := tok.AccessToken
+	if tk == "" && tok.RefreshToken != "" {
+		tk = tok.RefreshToken
+	}
+	if tk == "" {
+		return ErrTokenAccessKey
+	}
+
+	redirect, err := http.NewRequest("GET", p.wellKnown.SignOutURI, nil)
+	if err != nil {
+		return err
+	}
+
+	qry := redirect.URL.Query()
+	qry.Add("id_token_hint", tk)
+	if redir != "" {
+		qry.Add("post_logout_redirect_uri", redir)
+	}
+
+	redirect.URL.RawQuery = qry.Encode()
+	http.Redirect(res, req, redirect.URL.String(), http.StatusFound)
+	return nil
 }
 
 // logIf logs if verbose is set

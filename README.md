@@ -146,12 +146,19 @@ when GOIC has new features.
 
 > The example and discussion here assume `localhost` domain so adjust that accordingly for your domains.
 
+### Signing out
+
+For signing out you need to manually invoke `g.SignOut()` from within http context. See the [API](#signout) below.
+There is also a working [example](./examples/all.go). Note that not all Providers support signing out.
+
 ---
 ## GOIC API
 
 GOIC supports full end-to-end for Authorization Code Flow, however if you want to manually interact, here's summary of API:
 
-#### Check Provider
+#### Supports
+
+Use it to check if a provider is supported.
 
 ```go
 g := goic.New("/auth/o8", false)
@@ -161,7 +168,7 @@ g.Supports("abc") // true
 g.Supports("xyz") // false
 ```
 
-#### Refresh Token
+#### RefreshToken
 
 Use it to request Access token by using refresh token.
 
@@ -173,9 +180,9 @@ tok, err := g.RefreshToken(t)
 // Do something with tok.AccessToken
 ```
 
-#### Auth Request
+#### RequestAuth
 
-Manually request authentication from OpenID Provider.
+Manually request authentication from OpenID Provider. Must be called from within http context.
 
 ```go
 g := goic.New("/auth/o8", false)
@@ -193,7 +200,7 @@ redir := "https://localhost/auth/o8/" + p.Name
 err := g.RequestAuth(p, state, nonce, redir, res, req)
 ```
 
-#### Authentication
+#### Authenticate
 
 Manually attempt to authenticate after the request comes back from OpenID Provider.
 
@@ -211,9 +218,10 @@ redir := "https://localhost/auth/o8/" + p.Name
 tok, err := g.Authenticate(p, code, nonce, redir)
 ```
 
-### Userinfo
+#### Userinfo
 
 Manually request Userinfo by using the token returned by Authentication above.
+
 ```go
 g := goic.New("/auth/o8", false)
 p := g.NewProvider("abc", "...").WithCredential("...", "...")
@@ -221,6 +229,21 @@ p := g.NewProvider("abc", "...").WithCredential("...", "...")
 tok, err := g.Authenticate(p, code, nonce, redir)
 user := g.UserInfo(tok)
 err := user.Error
+```
+
+#### SignOut
+
+Use it to sign out the user from OpenID Provider. Must be called from within http context.
+Ideally, you would clear the session and logout user from your own system first and then invoke SignOut.
+
+```go
+g := goic.New("/auth/o8", false)
+p := g.NewProvider("abc", "...").WithCredential("...", "...")
+// ...
+tok := &goic.Token{AccessToken: "current session token", Provider: p.Name}
+err := g.SignOut(tok, "http://some/preconfigured/redir/uri", res, req)
+// redir uri is optional
+err := g.SignOut(tok, "", res, req)
 ```
 
 ---

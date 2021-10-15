@@ -25,6 +25,8 @@ type WellKnown struct {
 	AuthURI     string   `json:"authorization_endpoint"`
 	TokenURI    string   `json:"token_endpoint"`
 	UserInfoURI string   `json:"userinfo_endpoint"`
+	SignOutURI  string   `json:"end_session_endpoint,omitempty"`
+	RevokeURI   string   `json:"revocation_endpoint,omitempty"`
 	AlgoSupport []string `json:"id_token_signing_alg_values_supported"`
 	jwks        struct {
 		Keys []struct {

@@ -16,7 +16,7 @@ It is a weekend hack project and is work in progress and not production ready ye
 # Installation
 
 ```sh
-go get github.com/adhocore/goic
+go get -u github.com/adhocore/goic
 ```
 
 # Usage

@@ -119,3 +119,22 @@ func (p *Provider) getWellKnown() (*WellKnown, error) {
 
 	return p.wellKnown, nil
 }
+
+// CanRevoke checks if token can be revoked for this Provider
+func (p *Provider) CanRevoke() bool {
+	return p.wellKnown.RevokeURI != ""
+}
+
+// CanSignOut checks if token can be signed out for this Provider
+func (p *Provider) CanSignOut() bool {
+	return p.wellKnown.SignOutURI != ""
+}
+
+// AuthBasicHeader gives a string ready to use as Authorization header
+// The returned value contains "Basic " prefix already
+func (p *Provider) AuthBasicHeader() string {
+	id := url.PathEscape(url.QueryEscape(p.clientID))
+	pass := url.PathEscape(url.QueryEscape(p.clientSecret))
+
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte(id+":"+pass))
+}

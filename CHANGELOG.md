@@ -1,3 +1,24 @@
+## [v0.0.12](https://github.com/adhocore/goic/releases/tag/v0.0.12) (2021-10-16)
+
+### Features
+- Add RevokeToken (Jitendra Adhikari) [_b8f3678_](https://github.com/adhocore/goic/commit/b8f3678)
+- Add helper funcs to check abilities and create auth header (Jitendra Adhikari) [_545c012_](https://github.com/adhocore/goic/commit/545c012)
+
+### Bug Fixes
+- Token is not mandatory for signout (Jitendra Adhikari) [_da50d61_](https://github.com/adhocore/goic/commit/da50d61)
+- Some provider like yahoo uses key token_revocation_endpoint (Jitendra Adhikari) [_c78812c_](https://github.com/adhocore/goic/commit/c78812c)
+
+### Miscellaneous
+- Add revoke token example (Jitendra Adhikari) [_b7c04c5_](https://github.com/adhocore/goic/commit/b7c04c5)
+
+### Documentations
+- Ability support matrix (Jitendra) [_070f1d3_](https://github.com/adhocore/goic/commit/070f1d3)
+- Func doc (Jitendra Adhikari) [_6b9e0b0_](https://github.com/adhocore/goic/commit/6b9e0b0)
+- Code clarity (Jitendra Adhikari) [_066e7c2_](https://github.com/adhocore/goic/commit/066e7c2)
+- Add revocation section and code snippet (Jitendra Adhikari) [_9cf00c0_](https://github.com/adhocore/goic/commit/9cf00c0)
+- Cleanup misinfo (Jitendra) [_1fc483b_](https://github.com/adhocore/goic/commit/1fc483b)
+
+
 ## [v0.0.11](https://github.com/adhocore/goic/releases/tag/v0.0.11) (2021-10-15)
 
 ### Features

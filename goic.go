@@ -434,16 +434,8 @@ func (g *Goic) SignOut(tok *Token, redir string, res http.ResponseWriter, req *h
 	}
 
 	p, ok := g.providers[tok.Provider]
-	if !ok || p.wellKnown.SignOutURI == "" {
+	if !ok || !p.CanSignOut() {
 		return ErrProviderSupport
-	}
-
-	tk := tok.AccessToken
-	if tk == "" && tok.RefreshToken != "" {
-		tk = tok.RefreshToken
-	}
-	if tk == "" {
-		return ErrTokenAccessKey
 	}
 
 	redirect, err := http.NewRequest("GET", p.wellKnown.SignOutURI, nil)
@@ -451,8 +443,13 @@ func (g *Goic) SignOut(tok *Token, redir string, res http.ResponseWriter, req *h
 		return err
 	}
 
-	qry := redirect.URL.Query()
-	qry.Add("id_token_hint", tk)
+	tk, qry := tok.AccessToken, redirect.URL.Query()
+	if tk == "" && tok.RefreshToken != "" {
+		tk = tok.RefreshToken
+	}
+	if tk != "" {
+		qry.Add("id_token_hint", tk)
+	}
 	if redir != "" {
 		qry.Add("post_logout_redirect_uri", redir)
 	}

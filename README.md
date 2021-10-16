@@ -26,11 +26,11 @@ Let's say `/auth/o8`. Then the provider name follows it.
 All the OpenID providers that your server should support will need a unique name and each of the
 providers get a URI like so `/auth/o8/<name>`. Example:
 
-| Provider | Name | OpenID URI | Demo URL |
-|----------|------|------------|----------|
-| Google | google | `/auth/o8/google` | [urlssh.xyz/auth/o8/google](https://urlssh.xyz/auth/o8/google) |
-| Microsoft | microsoft | `/auth/o8/microsoft` | [urlssh.xyz/auth/o8/microsoft](https://urlssh.xyz/auth/o8/microsoft) |
-| Yahoo | yahoo | `/auth/o8/yahoo` | [urlssh.xyz/auth/o8/yahoo](https://urlssh.xyz/auth/o8/yahoo) |
+| Provider | Name | OpenID URI | Demo URL | Revocation | Signout |
+|----------|------|------------|----------|------------|---------|
+| Google | google | `/auth/o8/google` | [urlssh.xyz/auth/o8/google](https://urlssh.xyz/auth/o8/google) | Yes | No
+| Microsoft | microsoft | `/auth/o8/microsoft` | [urlssh.xyz/auth/o8/microsoft](https://urlssh.xyz/auth/o8/microsoft) | No | Yes
+| Yahoo | yahoo | `/auth/o8/yahoo` | [urlssh.xyz/auth/o8/yahoo](https://urlssh.xyz/auth/o8/yahoo) | Yes | No
 
 > On successful verification your information is [echoed back](https://github.com/adhocore/urlsh/blob/main/router/router.go#L48-L53) to you as JSON but **not** saved in server (pinky promise).
 

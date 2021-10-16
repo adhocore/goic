@@ -1,9 +1,11 @@
 package goic
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -27,6 +29,7 @@ type WellKnown struct {
 	UserInfoURI string   `json:"userinfo_endpoint"`
 	SignOutURI  string   `json:"end_session_endpoint,omitempty"`
 	RevokeURI   string   `json:"revocation_endpoint,omitempty"`
+	XRevokeURI  string   `json:"token_revocation_endpoint,omitempty"`
 	AlgoSupport []string `json:"id_token_signing_alg_values_supported"`
 	jwks        struct {
 		Keys []struct {
@@ -100,6 +103,10 @@ func (p *Provider) getWellKnown() (*WellKnown, error) {
 
 	if err := json.NewDecoder(res.Body).Decode(&p.wellKnown); err != nil {
 		return nil, err
+	}
+
+	if p.wellKnown.RevokeURI == "" && p.wellKnown.XRevokeURI != "" {
+		p.wellKnown.RevokeURI = p.wellKnown.XRevokeURI
 	}
 
 	if p.wellKnown.KeysURI == "" {

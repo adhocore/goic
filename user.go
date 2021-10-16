@@ -37,6 +37,7 @@ func (u *User) withError(err error) *User {
 	return u
 }
 
+// verifyClaims verifies the claims of a Token
 func verifyClaims(tok *Token, nonce, aud string) (jwt.Claims, error) {
 	claims := jwt.MapClaims{}
 	seg := strings.Split(tok.IDToken, ".")

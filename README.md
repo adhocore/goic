@@ -150,6 +150,11 @@ when GOIC has new features.
 For signing out you need to manually invoke `g.SignOut()` from within http context. See the [API](#signout) below.
 There is also a working [example](./examples/all.go). Note that not all Providers support signing out.
 
+### Revocation
+
+To revoke a token manually, invoke `g.RevokeToken()` from any context. See the [API](#revoketoken) below.
+There is also a working [example](./examples/all.go). Note that not all Providers support revocation.
+
 ---
 ## GOIC API
 
@@ -165,18 +170,6 @@ g.NewProvider("abc", "...").WithCredential("...", "...")
 
 g.Supports("abc") // true
 g.Supports("xyz") // false
-```
-
-#### RefreshToken
-
-Use it to request Access token by using refresh token.
-
-```go
-g := goic.New("/auth/o8", false)
-// ... add providers
-t := &goic.Token{RefreshToken: "your refresh token", Provider: goic.Microsoft.Name}
-tok, err := g.RefreshToken(t)
-// Do something with tok.AccessToken
 ```
 
 #### RequestAuth
@@ -217,6 +210,18 @@ redir := "https://localhost/auth/o8/" + p.Name
 tok, err := g.Authenticate(p, code, nonce, redir)
 ```
 
+#### RefreshToken
+
+Use it to request Access token by using refresh token.
+
+```go
+g := goic.New("/auth/o8", false)
+// ... add providers
+old := &goic.Token{RefreshToken: "your refresh token", Provider: goic.Microsoft.Name}
+tok, err := g.RefreshToken(old)
+// Do something with new tok.AccessToken
+```
+
 #### Userinfo
 
 Manually request Userinfo by using the token returned by Authentication above.
@@ -243,6 +248,18 @@ tok := &goic.Token{AccessToken: "current session token", Provider: p.Name}
 err := g.SignOut(tok, "http://some/preconfigured/redir/uri", res, req)
 // redir uri is optional
 err := g.SignOut(tok, "", res, req)
+```
+
+#### RevokeToken
+
+Use it to revoke the token so that is incapacitated.
+
+```go
+g := goic.New("/auth/o8", false)
+p := g.NewProvider("abc", "...").WithCredential("...", "...")
+// ...
+tok := &goic.Token{AccessToken: "current session token", Provider: p.Name}
+err := g.RevokeToken(tok)
 ```
 
 ---

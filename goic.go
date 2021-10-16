@@ -434,16 +434,8 @@ func (g *Goic) SignOut(tok *Token, redir string, res http.ResponseWriter, req *h
 	}
 
 	p, ok := g.providers[tok.Provider]
-	if !ok || p.wellKnown.SignOutURI == "" {
+	if !ok || !p.CanSignOut() {
 		return ErrProviderSupport
-	}
-
-	tk := tok.AccessToken
-	if tk == "" && tok.RefreshToken != "" {
-		tk = tok.RefreshToken
-	}
-	if tk == "" {
-		return ErrTokenAccessKey
 	}
 
 	redirect, err := http.NewRequest("GET", p.wellKnown.SignOutURI, nil)
@@ -451,14 +443,68 @@ func (g *Goic) SignOut(tok *Token, redir string, res http.ResponseWriter, req *h
 		return err
 	}
 
-	qry := redirect.URL.Query()
-	qry.Add("id_token_hint", tk)
+	tk, qry := tok.AccessToken, redirect.URL.Query()
+	if tk == "" && tok.RefreshToken != "" {
+		tk = tok.RefreshToken
+	}
+	if tk != "" {
+		qry.Add("id_token_hint", tk)
+	}
 	if redir != "" {
 		qry.Add("post_logout_redirect_uri", redir)
 	}
 
 	redirect.URL.RawQuery = qry.Encode()
 	http.Redirect(res, req, redirect.URL.String(), http.StatusFound)
+	return nil
+}
+
+// RevokeToken revokes a Token so that it is no longer usable
+func (g *Goic) RevokeToken(tok *Token) error {
+	p, ok := g.providers[tok.Provider]
+	if !ok || !p.CanRevoke() {
+		return ErrProviderSupport
+	}
+
+	tk, hint := tok.AccessToken, "access_token"
+	if tk == "" && tok.RefreshToken != "" {
+		tk, hint = tok.RefreshToken, "refresh_token"
+	}
+	if tk == "" {
+		return ErrTokenAccessKey
+	}
+
+	qry := url.Values{}
+	qry.Add("token", tk)
+	qry.Add("token_type_hint", hint)
+
+	req, err := http.NewRequest("POST", p.wellKnown.RevokeURI, strings.NewReader(qry.Encode()))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", p.AuthBasicHeader())
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	var revoke map[string]interface{}
+	if err := json.Unmarshal(body, &revoke); err != nil {
+		return err
+	}
+	if e, ok := revoke["error"].(map[string]string); ok {
+		if msg, ok := e["message"]; ok {
+			return errors.New(msg)
+		}
+	}
 	return nil
 }
 

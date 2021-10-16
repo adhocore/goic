@@ -17,10 +17,13 @@ func main() {
 
 	g.UserCallback(func(t *goic.Token, u *goic.User, w http.ResponseWriter, r *http.Request) {
 		log.Printf("token: %v\nuser: %v\n", t, u)
-		uri := "https://localhost/auth/signout?p=" + t.Provider + "&t=" + t.AccessToken
-		uri = fmt.Sprintf(`, click <a href="%s">here</a> to signout (some provider may not support it)`, uri)
+		uri1 := "https://localhost/auth/signout?p=" + t.Provider + "&t=" + t.AccessToken
+		uri1 = fmt.Sprintf(`,<br><br>click <a href="%s" target="_blank">here</a> to signout (some provider may not support it)`, uri1)
+		uri2 := "https://localhost/auth/revoke?p=" + t.Provider + "&t=" + t.AccessToken
+		uri2 = fmt.Sprintf(`,<br><br>click <a href="%s" target="_blank">here</a> to revoke (some provider may not support it)`, uri2)
+
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write([]byte("All good, check backend console" + uri))
+		_, _ = w.Write([]byte("All good, check backend console" + uri1 + uri2))
 	})
 
 	addr := "localhost:443"
@@ -41,6 +44,17 @@ func main() {
 		if err := g.SignOut(tok, "", w, r); err != nil {
 			http.Error(w, "can't signout: "+err.Error(), http.StatusInternalServerError)
 		}
+	})
+
+	// Revoke Handler
+	http.HandleFunc("/auth/revoke/", func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		tok := &goic.Token{Provider: q.Get("p"), AccessToken: q.Get("t")}
+		if err := g.RevokeToken(tok); err != nil {
+			http.Error(w, "Can't revoke: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write([]byte("Revoked token successfully"))
 	})
 
 	log.Fatal(http.ListenAndServeTLS(addr, "server.crt", "server.key", nil))

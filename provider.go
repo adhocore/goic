@@ -1,9 +1,11 @@
 package goic
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -27,6 +29,7 @@ type WellKnown struct {
 	UserInfoURI string   `json:"userinfo_endpoint"`
 	SignOutURI  string   `json:"end_session_endpoint,omitempty"`
 	RevokeURI   string   `json:"revocation_endpoint,omitempty"`
+	XRevokeURI  string   `json:"token_revocation_endpoint,omitempty"`
 	AlgoSupport []string `json:"id_token_signing_alg_values_supported"`
 	jwks        struct {
 		Keys []struct {
@@ -102,6 +105,10 @@ func (p *Provider) getWellKnown() (*WellKnown, error) {
 		return nil, err
 	}
 
+	if p.wellKnown.RevokeURI == "" && p.wellKnown.XRevokeURI != "" {
+		p.wellKnown.RevokeURI = p.wellKnown.XRevokeURI
+	}
+
 	if p.wellKnown.KeysURI == "" {
 		return p.wellKnown, nil
 	}
@@ -118,4 +125,23 @@ func (p *Provider) getWellKnown() (*WellKnown, error) {
 	}
 
 	return p.wellKnown, nil
+}
+
+// CanRevoke checks if token can be revoked for this Provider
+func (p *Provider) CanRevoke() bool {
+	return p.wellKnown.RevokeURI != ""
+}
+
+// CanSignOut checks if token can be signed out for this Provider
+func (p *Provider) CanSignOut() bool {
+	return p.wellKnown.SignOutURI != ""
+}
+
+// AuthBasicHeader gives a string ready to use as Authorization header
+// The returned value contains "Basic " prefix already
+func (p *Provider) AuthBasicHeader() string {
+	id := url.PathEscape(url.QueryEscape(p.clientID))
+	pass := url.PathEscape(url.QueryEscape(p.clientSecret))
+
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte(id+":"+pass))
 }

@@ -153,7 +153,7 @@ There is also a working [example](./examples/all.go). Note that not all Provider
 ### Revocation
 
 To revoke a token manually, invoke `g.RevokeToken()` from any context. See the [API](#revoketoken) below.
-There is also a working [example](./examples/all.go). Note that not all Providers support signing out.
+There is also a working [example](./examples/all.go). Note that not all Providers support revocation.
 
 ---
 ## GOIC API
@@ -217,9 +217,9 @@ Use it to request Access token by using refresh token.
 ```go
 g := goic.New("/auth/o8", false)
 // ... add providers
-t := &goic.Token{RefreshToken: "your refresh token", Provider: goic.Microsoft.Name}
-tok, err := g.RefreshToken(t)
-// Do something with tok.AccessToken
+old := &goic.Token{RefreshToken: "your refresh token", Provider: goic.Microsoft.Name}
+tok, err := g.RefreshToken(old)
+// Do something with new tok.AccessToken
 ```
 
 #### Userinfo

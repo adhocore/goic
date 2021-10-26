@@ -1,3 +1,13 @@
+## [v0.0.14](https://github.com/adhocore/goic/releases/tag/v0.0.14) (2021-10-26)
+
+### Features
+- Add GetProvider() (Jitendra Adhikari) [_c3a960e_](https://github.com/adhocore/goic/commit/c3a960e)
+- Add AuthRedirectURL() for the case where net/http is not used (Jitendra Adhikari) [_3ae7b56_](https://github.com/adhocore/goic/commit/3ae7b56)
+
+### Miscellaneous
+- Minor update (Jitendra) [_a3ae5aa_](https://github.com/adhocore/goic/commit/a3ae5aa)
+
+
 ## [v0.0.12](https://github.com/adhocore/goic/releases/tag/v0.0.12) (2021-10-16)
 
 ### Features

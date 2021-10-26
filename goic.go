@@ -130,9 +130,20 @@ func (g *Goic) RequestAuth(p *Provider, state, nonce, redir string, res http.Res
 		return ErrProviderSupport
 	}
 
+	redirect := AuthRedirectURL(p, state, nonce, redir)
+	if redirect == "" {
+		return ErrProviderSupport
+	}
+	http.Redirect(res, req, redirect, http.StatusFound)
+	return nil
+}
+
+// AuthRedirectURL gives the full auth redirect URL for the provider
+// It returns empty string when there is an error
+func AuthRedirectURL(p *Provider, state, nonce, redir string) string {
 	redirect, err := http.NewRequest("GET", p.wellKnown.AuthURI, nil)
 	if err != nil {
-		return err
+		return ""
 	}
 
 	qry := redirect.URL.Query()
@@ -144,8 +155,7 @@ func (g *Goic) RequestAuth(p *Provider, state, nonce, redir string, res http.Res
 	qry.Add("nonce", nonce)
 	redirect.URL.RawQuery = qry.Encode()
 
-	http.Redirect(res, req, redirect.URL.String(), http.StatusFound)
-	return nil
+	return redirect.URL.String()
 }
 
 // checkState checks if given state is valid (i.e. known)

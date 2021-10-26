@@ -104,6 +104,7 @@ func (g *Goic) NewProvider(name, uri string) *Provider {
 	return p
 }
 
+// AddProvider adds a Provider to Goic
 func (g *Goic) AddProvider(p *Provider) *Provider {
 	if p, ok := g.providers[p.Name]; ok {
 		g.logIf("goic provider %s: already set", p.Name)
@@ -116,6 +117,14 @@ func (g *Goic) AddProvider(p *Provider) *Provider {
 
 	g.providers[p.Name] = p
 	return p
+}
+
+// GetProvider returns Provider by name or nil if not existent
+func (g *Goic) GetProvider(name string) *Provider {
+	if p, ok := g.providers[name]; ok {
+		return p
+	}
+	return nil
 }
 
 // Supports checks if a given provider name is supported
@@ -536,6 +545,7 @@ func (g *Goic) errorHTML(res http.ResponseWriter, err error, h, label string) {
 	_, _ = res.Write([]byte(err.Error() + h))
 }
 
+// UnsetState unsets state from memory
 func (g *Goic) UnsetState(s string) {
 	g.sLock.Lock()
 	delete(g.states, s)

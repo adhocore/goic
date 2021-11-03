@@ -76,7 +76,7 @@ var Paypal = &Provider{
 
 // PaypalSandbox provider
 var PaypalSandbox = &Provider{
-	Name:  "paypal",
+	Name:  "paypal_sb",
 	URL:   "https://www.paypalobjects.com",
 	Scope: "openid email profile",
 }

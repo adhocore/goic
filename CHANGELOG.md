@@ -1,3 +1,10 @@
+## [v0.0.15](https://github.com/adhocore/goic/releases/tag/v0.0.15) (2021-11-03)
+
+### Features
+- Add paypal support (Jitendra Adhikari) [_e8f2a62_](https://github.com/adhocore/goic/commit/e8f2a62)
+- Add paypal support (Jitendra Adhikari) [_1d11cb4_](https://github.com/adhocore/goic/commit/1d11cb4)
+
+
 ## [v0.0.14](https://github.com/adhocore/goic/releases/tag/v0.0.14) (2021-10-26)
 
 ### Features

@@ -60,10 +60,25 @@ var Google = &Provider{
 	Scope: "openid email profile",
 }
 
+// Yahoo provider
 var Yahoo = &Provider{
 	Name:  "yahoo",
 	URL:   "https://login.yahoo.com",
 	Scope: "openid openid2 email profile",
+}
+
+// Paypal live provider
+var Paypal = &Provider{
+	Name:  "paypal",
+	URL:   "https://www.paypalobjects.com",
+	Scope: "openid email profile",
+}
+
+// PaypalSandbox provider
+var PaypalSandbox = &Provider{
+	Name:  "paypal",
+	URL:   "https://www.paypalobjects.com",
+	Scope: "openid email profile",
 }
 
 // WithCredential sets client id and secret for a Provider

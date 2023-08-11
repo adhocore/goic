@@ -21,44 +21,57 @@ type User struct {
 	Error         error  `json:"-"`
 }
 
-// Token represents token structure from well known token endpoint
-type Token struct {
-	Err          string `json:"error,omitempty"`
-	ErrDesc      string `json:"error_description,omitempty"`
-	IDToken      string `json:"id_token"`
-	AccessToken  string `json:"access_token,omitempty"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-	Provider     string `json:"provider,omitempty"`
-}
-
 // withError embeds Error to User
 func (u *User) withError(err error) *User {
 	u.Error = err
 	return u
 }
 
+func (u *User) FromClaims(c jwt.MapClaims) *User {
+	u.Name = c["name"].(string)
+	u.GivenName = c["given_name"].(string)
+	u.FamilyName = c["family_name"].(string)
+	u.Email = c["email"].(string)
+	u.Picture = c["picture"].(string)
+	u.Subject = c["sub"].(string)
+	return u
+}
+
+// Token represents token structure from well known token endpoint
+type Token struct {
+	Claims       jwt.MapClaims `json:"-"`
+	Err          string        `json:"error,omitempty"`
+	ErrDesc      string        `json:"error_description,omitempty"`
+	IDToken      string        `json:"id_token"`
+	AccessToken  string        `json:"access_token,omitempty"`
+	RefreshToken string        `json:"refresh_token,omitempty"`
+	Provider     string        `json:"provider,omitempty"`
+}
+
 // verifyClaims verifies the claims of a Token
-func verifyClaims(tok *Token, nonce, aud string) (jwt.Claims, error) {
+func (tok *Token) VerifyClaims(nonce, aud string) (err error) {
 	claims := jwt.MapClaims{}
+	tok.Claims = jwt.MapClaims{}
+
 	seg := strings.Split(tok.IDToken, ".")
 	if len(seg) != 3 {
-		return claims, ErrTokenInvalid
+		return ErrTokenInvalid
 	}
 
 	buf, _ := Base64UrlDecode(seg[1])
 	if err := json.Unmarshal(buf, &claims); err != nil {
-		return claims, ErrTokenClaims
+		return ErrTokenClaims
 	}
 
 	usrNonce, ok := claims["nonce"]
 	if ok && subtle.ConstantTimeCompare([]byte(nonce), []byte(usrNonce.(string))) == 0 {
-		return claims, ErrTokenNonce
+		return ErrTokenNonce
 	}
 
-	_, ok = claims["aud"]
-	if ok && !claims.VerifyAudience(aud, true) {
-		return claims, ErrTokenAud
+	if _, ok = claims["aud"]; ok && !claims.VerifyAudience(aud, true) {
+		return ErrTokenAud
 	}
 
-	return claims, nil
+	tok.Claims = claims // attach only if valid
+	return nil
 }

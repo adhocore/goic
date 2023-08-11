@@ -1,6 +1,6 @@
 # adhocore/goic
 
-[![Latest Version](https://img.shields.io/github/release/adhocore/gronx.svg?style=flat-square)](https://github.com/adhocore/goic/releases)
+[![Latest Version](https://img.shields.io/github/release/adhocore/goic.svg?style=flat-square)](https://github.com/adhocore/goic/releases)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
 [![Go Report](https://goreportcard.com/badge/github.com/adhocore/goic)](https://goreportcard.com/report/github.com/adhocore/goic)
 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Simple+Golang+OpenID+Connect+client&url=https://github.com/adhocore/goic&hashtags=go,golang,openid,oauth,openid-connect,connect,oauth2)

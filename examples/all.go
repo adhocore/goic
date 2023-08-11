@@ -14,6 +14,8 @@ func main() {
 	g.AddProvider(goic.Google.WithCredential(os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET")))
 	g.AddProvider(goic.Microsoft.WithCredential(os.Getenv("MICROSOFT_CLIENT_ID"), os.Getenv("MICROSOFT_CLIENT_SECRET")))
 	g.AddProvider(goic.Yahoo.WithCredential(os.Getenv("YAHOO_CLIENT_ID"), os.Getenv("YAHOO_CLIENT_SECRET")))
+	g.AddProvider(goic.Paypal.WithCredential(os.Getenv("PAYPAL_CLIENT_ID"), os.Getenv("PAYPAL_CLIENT_SECRET")))
+	g.AddProvider(goic.Facebook.WithCredential(os.Getenv("FACEBOOK_CLIENT_ID"), os.Getenv("FACEBOOK_CLIENT_SECRET")))
 
 	g.UserCallback(func(t *goic.Token, u *goic.User, w http.ResponseWriter, r *http.Request) {
 		log.Printf("token: %v\nuser: %v\n", t, u)
@@ -32,7 +34,7 @@ func main() {
 	}
 
 	log.Println("Server running on https://localhost, You can visit any of the below URLs:")
-	for _, v := range []string{"google", "microsoft", "yahoo"} {
+	for _, v := range []string{"google", "facebook", "microsoft", "yahoo", "paypal"} {
 		log.Printf("  https://localhost/auth/o8/%s\n", v)
 	}
 	http.HandleFunc("/", g.MiddlewareFunc(handler))

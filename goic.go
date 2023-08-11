@@ -112,7 +112,7 @@ func (g *Goic) AddProvider(p *Provider) *Provider {
 	}
 
 	if _, err := p.getWellKnown(); err != nil {
-		log.Fatalf("goic provider %s: cannot load well-known configuration: %s", p.Name, err.Error())
+		p.SetErr(err)
 	}
 
 	g.providers[p.Name] = p
@@ -150,13 +150,17 @@ func (g *Goic) RequestAuth(p *Provider, state, nonce, redir string, res http.Res
 // AuthRedirectURL gives the full auth redirect URL for the provider
 // It returns empty string when there is an error
 func AuthRedirectURL(p *Provider, state, nonce, redir string) string {
-	redirect, err := http.NewRequest("GET", p.wellKnown.AuthURI, nil)
+	redirect, err := http.NewRequest("GET", p.GetURI("auth"), nil)
 	if err != nil {
 		return ""
 	}
 
 	qry := redirect.URL.Query()
 	qry.Add("response_type", "code")
+	if p.ResType != "" {
+		qry.Set("response_type", p.ResType)
+	}
+
 	qry.Add("redirect_uri", redir)
 	qry.Add("client_id", p.clientID)
 	qry.Add("scope", p.Scope)
@@ -164,7 +168,12 @@ func AuthRedirectURL(p *Provider, state, nonce, redir string) string {
 	qry.Add("nonce", nonce)
 	redirect.URL.RawQuery = qry.Encode()
 
-	return redirect.URL.String()
+	query := ""
+	if p.QueryFn != nil {
+		query = "&" + p.QueryFn()
+	}
+
+	return redirect.URL.String() + query
 }
 
 // checkState checks if given state is valid (i.e. known)
@@ -187,26 +196,33 @@ func (g *Goic) checkState(state string) (string, error) {
 
 // Authenticate tries to authenticate a user by given code and nonce
 // It is where token is requested and validated
-func (g *Goic) Authenticate(p *Provider, code, nonce, redir string) (*Token, error) {
+func (g *Goic) Authenticate(p *Provider, codeOrTok, nonce, redir string) (tok *Token, err error) {
+	tok = &Token{Provider: p.Name}
 	if !g.Supports(p.Name) {
-		return &Token{Provider: p.Name}, ErrProviderSupport
+		return tok, ErrProviderSupport
 	}
 
-	tok, err := g.getToken(p, code, redir, "authorization_code")
+	isCode := p.ResType == "" || strings.Contains(" "+p.ResType+" ", " code ")
+	// get token from code or just parse token
+	if isCode {
+		tok, err = g.getToken(p, codeOrTok, redir, "authorization_code")
+	} else {
+		tok, err = parseToken([]byte(codeOrTok), tok)
+	}
+
 	if err != nil {
-		return tok, err
+		return tok, fmt.Errorf("get token: %w", err)
 	}
-
 	if err := g.verifyToken(p, tok, nonce); err != nil {
-		return tok, err
+		return tok, fmt.Errorf("verify token: %w", err)
 	}
 
 	return tok, nil
 }
 
 // getToken actually gets token from Provider via wellKnown.TokenURI
-func (g *Goic) getToken(p *Provider, code, redir, grant string) (*Token, error) {
-	tok := &Token{Provider: p.Name}
+func (g *Goic) getToken(p *Provider, code, redir, grant string) (tok *Token, err error) {
+	tok = &Token{Provider: p.Name}
 
 	qry := url.Values{}
 	qry.Add("grant_type", grant)
@@ -219,7 +235,7 @@ func (g *Goic) getToken(p *Provider, code, redir, grant string) (*Token, error) 
 	qry.Add("client_id", p.clientID)
 	qry.Add("client_secret", p.clientSecret)
 
-	req, err := http.NewRequest("POST", p.wellKnown.TokenURI, strings.NewReader(qry.Encode()))
+	req, err := http.NewRequest("POST", p.GetURI("token"), strings.NewReader(qry.Encode()))
 	if err != nil {
 		return tok, err
 	}
@@ -231,13 +247,20 @@ func (g *Goic) getToken(p *Provider, code, redir, grant string) (*Token, error) 
 	}
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return tok, err
 	}
 
-	if err := json.Unmarshal(body, &tok); err != nil {
+	return parseToken(body, tok)
+}
+
+func parseToken(tokByte []byte, tok *Token) (*Token, error) {
+	if err := json.Unmarshal(tokByte, &tok); err != nil {
 		return tok, err
+	}
+	if tok.IDToken == "" {
+		return tok, ErrTokenEmpty
 	}
 
 	if tok.Err != "" {
@@ -245,24 +268,20 @@ func (g *Goic) getToken(p *Provider, code, redir, grant string) (*Token, error) 
 		if tok.ErrDesc != "" {
 			msg += ": " + tok.ErrDesc
 		}
-		return tok, errors.New(msg)
+		return tok, fmt.Errorf(msg)
 	}
-
-	if tok.IDToken == "" {
-		return tok, ErrTokenEmpty
-	}
-
 	return tok, nil
 }
 
 // verifyToken checks and verifies authenticity and ownership of Token
-func (g *Goic) verifyToken(p *Provider, tok *Token, nonce string) error {
-	claims, err := verifyClaims(tok, nonce, p.clientID)
-	if err != nil {
+func (g *Goic) verifyToken(p *Provider, tok *Token, nonce string) (err error) {
+	// Data verification
+	if err = tok.VerifyClaims(nonce, p.clientID); err != nil {
 		return err
 	}
 
-	_, err = jwt.ParseWithClaims(tok.IDToken, claims, func(t *jwt.Token) (interface{}, error) {
+	// Signature verification
+	_, err = jwt.ParseWithClaims(tok.IDToken, tok.Claims, func(t *jwt.Token) (any, error) {
 		alg := t.Header["alg"].(string)
 		al2 := alg[0:2]
 		if al2 == "HS" {
@@ -397,8 +416,11 @@ func (g *Goic) UserInfo(tok *Token) *User {
 	}
 
 	p := g.providers[tok.Provider]
+	if p.GetURI("userinfo") == "" {
+		return user.FromClaims(tok.Claims)
+	}
 
-	req, err := http.NewRequest("GET", p.wellKnown.UserInfoURI, nil)
+	req, err := http.NewRequest("GET", p.GetURI("userinfo"), nil)
 	if err != nil {
 		return user.withError(err)
 	}
@@ -457,7 +479,7 @@ func (g *Goic) SignOut(tok *Token, redir string, res http.ResponseWriter, req *h
 		return ErrProviderSupport
 	}
 
-	redirect, err := http.NewRequest("GET", p.wellKnown.SignOutURI, nil)
+	redirect, err := http.NewRequest("GET", p.GetURI("signout"), nil)
 	if err != nil {
 		return err
 	}
@@ -497,7 +519,7 @@ func (g *Goic) RevokeToken(tok *Token) error {
 	qry.Add("token", tk)
 	qry.Add("token_type_hint", hint)
 
-	req, err := http.NewRequest("POST", p.wellKnown.RevokeURI, strings.NewReader(qry.Encode()))
+	req, err := http.NewRequest("POST", p.GetURI("revoke"), strings.NewReader(qry.Encode()))
 	if err != nil {
 		return err
 	}

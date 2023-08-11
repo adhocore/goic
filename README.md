@@ -11,8 +11,6 @@
 GOIC, **Go Open ID Connect**, is OpenID connect client library for Golang.
 It supports the *Authorization Code Flow* of OpenID Connect specification.
 
-It is a weekend hack project and is work in progress and not production ready yet.
-
 # Installation
 
 ```sh
@@ -26,13 +24,13 @@ Let's say `/auth/o8`. Then the provider name follows it.
 All the OpenID providers that your server should support will need a unique name and each of the
 providers get a URI like so `/auth/o8/<name>`. Example:
 
-| Provider | Name | OpenID URI | Demo URL | Revocation | Signout |
+| Provider | Name | OpenID URI | Revocation | Signout |
 |----------|------|------------|----------|------------|---------|
-| Google | google | `/auth/o8/google` | [urlssh.xyz/auth/o8/google](https://urlssh.xyz/auth/o8/google) | Yes | No
-| Microsoft | microsoft | `/auth/o8/microsoft` | [urlssh.xyz/auth/o8/microsoft](https://urlssh.xyz/auth/o8/microsoft) | No | Yes
-| Yahoo | yahoo | `/auth/o8/yahoo` | [urlssh.xyz/auth/o8/yahoo](https://urlssh.xyz/auth/o8/yahoo) | Yes | No
-
-> On successful verification your information is [echoed back](https://github.com/adhocore/urlsh/blob/main/router/router.go#L48-L53) to you as JSON but **not** saved in server (pinky promise).
+| Google | google | `/auth/o8/google` |  Yes | No
+| Facebook | facebook | `/auth/o8/facebook` | No | No
+| Microsoft | microsoft | `/auth/o8/microsoft` | No | Yes
+| Yahoo | yahoo | `/auth/o8/yahoo` | Yes | No
+| Paypal | paypal | `/auth/o8/paypal` | No | No
 
 **Important:** All the providers **must** provide .well-known configurations for OpenID auto discovery.
 

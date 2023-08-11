@@ -11,13 +11,18 @@ import (
 
 // Provider represents OpenID Connect provider
 type Provider struct {
+	wellKnown    *WellKnown
+	QueryFn      func() string
+	err          error
 	Name         string
 	URL          string
 	Scope        string
 	host         string
 	clientID     string
 	clientSecret string
-	wellKnown    *WellKnown
+	ResType      string
+	Sandbox      bool
+	discovered   bool
 }
 
 // WellKnown represents OpenID Connect well-known config
@@ -76,9 +81,18 @@ var Paypal = &Provider{
 
 // PaypalSandbox provider
 var PaypalSandbox = &Provider{
-	Name:  "paypal_sb",
-	URL:   "https://www.paypalobjects.com",
-	Scope: "openid email profile",
+	Name:    "paypal",
+	Sandbox: true,
+	URL:     "https://www.paypalobjects.com",
+	Scope:   "openid email profile",
+}
+
+var Facebook = &Provider{
+	Name:      "facebook",
+	ResType:   "code",
+	URL:       "https://www.facebook.com",
+	Scope:     "openid email public_profile",
+	wellKnown: &WellKnown{TokenURI: "https://graph.facebook.com/v17.0/oauth/access_token"},
 }
 
 // WithCredential sets client id and secret for a Provider
@@ -103,9 +117,23 @@ func (p *Provider) WithScope(s string) *Provider {
 	return p
 }
 
+// SetQuery sets query func for inital auth request
+func (p *Provider) SetQuery(fn func() string) *Provider {
+	p.QueryFn = fn
+	return p
+}
+
+// SetErr sets last encountered error
+func (p *Provider) SetErr(err error) { p.err = err }
+
+// Is checks if provider is given type
+func (p *Provider) Is(name string) bool {
+	return p.Name == name
+}
+
 // getWellKnown gets the well known config from Provider remote
 func (p *Provider) getWellKnown() (*WellKnown, error) {
-	if nil != p.wellKnown {
+	if nil != p.wellKnown && p.discovered {
 		return p.wellKnown, nil
 	}
 
@@ -116,6 +144,7 @@ func (p *Provider) getWellKnown() (*WellKnown, error) {
 	}
 	defer res.Body.Close()
 
+	p.discovered = true
 	if err := json.NewDecoder(res.Body).Decode(&p.wellKnown); err != nil {
 		return nil, err
 	}
@@ -140,6 +169,27 @@ func (p *Provider) getWellKnown() (*WellKnown, error) {
 	}
 
 	return p.wellKnown, nil
+}
+
+// GetURI gets an endpoint for given action
+func (p *Provider) GetURI(action string) (uri string) {
+	switch action {
+	case "auth":
+		uri = p.wellKnown.AuthURI
+	case "token":
+		uri = p.wellKnown.TokenURI
+	case "userinfo":
+		uri = p.wellKnown.UserInfoURI
+	case "revoke":
+		uri = p.wellKnown.RevokeURI
+	case "signout":
+		uri = p.wellKnown.SignOutURI
+	}
+
+	// if p.Sandbox && p.Is("paypal") {
+	// 	uri = strings.Replace(uri, ".paypal.com", ".sandbox.paypal.com", 1)
+	// }
+	return uri
 }
 
 // CanRevoke checks if token can be revoked for this Provider

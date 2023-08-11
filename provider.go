@@ -11,13 +11,18 @@ import (
 
 // Provider represents OpenID Connect provider
 type Provider struct {
+	wellKnown    *WellKnown
+	QueryFn      func() string
+	err          error
 	Name         string
 	URL          string
 	Scope        string
 	host         string
 	clientID     string
 	clientSecret string
-	wellKnown    *WellKnown
+	ResType      string
+	Sandbox      bool
+	discovered   bool
 }
 
 // WellKnown represents OpenID Connect well-known config
@@ -76,9 +81,18 @@ var Paypal = &Provider{
 
 // PaypalSandbox provider
 var PaypalSandbox = &Provider{
-	Name:  "paypal_sb",
-	URL:   "https://www.paypalobjects.com",
-	Scope: "openid email profile",
+	Name:    "paypal",
+	Sandbox: true,
+	URL:     "https://www.paypalobjects.com",
+	Scope:   "openid email profile",
+}
+
+var Facebook = &Provider{
+	Name:      "facebook",
+	ResType:   "code",
+	URL:       "https://www.facebook.com",
+	Scope:     "openid email public_profile",
+	wellKnown: &WellKnown{TokenURI: "https://graph.facebook.com/v17.0/oauth/access_token"},
 }
 
 // WithCredential sets client id and secret for a Provider
@@ -130,6 +144,7 @@ func (p *Provider) getWellKnown() (*WellKnown, error) {
 	}
 	defer res.Body.Close()
 
+	p.discovered = true
 	if err := json.NewDecoder(res.Body).Decode(&p.wellKnown); err != nil {
 		return nil, err
 	}

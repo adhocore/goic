@@ -4,8 +4,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"encoding/json"
-	"errors"
-	"io/ioutil"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -17,40 +17,40 @@ import (
 
 var (
 	// ErrProviderState is error for invalid request state
-	ErrProviderState = errors.New("goic provider: invalid request state")
+	ErrProviderState = fmt.Errorf("goic provider: invalid request state")
 
 	// ErrProviderSupport is error for unsupported provider
-	ErrProviderSupport = errors.New("goic provider: unsupported provider")
+	ErrProviderSupport = fmt.Errorf("goic provider: unsupported provider")
 
 	// ErrTokenEmpty is error for empty token
-	ErrTokenEmpty = errors.New("goic id_token: empty token")
+	ErrTokenEmpty = fmt.Errorf("goic id_token: empty token")
 
 	// ErrTokenInvalid is error for invalid token
-	ErrTokenInvalid = errors.New("goic id_token: invalid id_token")
+	ErrTokenInvalid = fmt.Errorf("goic id_token: invalid id_token")
 
 	// ErrRefreshTokenInvalid is error for invalid token
-	ErrRefreshTokenInvalid = errors.New("goic id_token: invalid refresh_token")
+	ErrRefreshTokenInvalid = fmt.Errorf("goic id_token: invalid refresh_token")
 
 	// ErrTokenClaims is error for invalid token claims
-	ErrTokenClaims = errors.New("goic id_token: invalid id_token claims")
+	ErrTokenClaims = fmt.Errorf("goic id_token: invalid id_token claims")
 
 	// ErrTokenNonce is error for invalid noce
-	ErrTokenNonce = errors.New("goic id_token: invalid nonce")
+	ErrTokenNonce = fmt.Errorf("goic id_token: invalid nonce")
 
 	// ErrTokenAud is error for invalid audience
-	ErrTokenAud = errors.New("goic id_token: invalid audience")
+	ErrTokenAud = fmt.Errorf("goic id_token: invalid audience")
 
 	// ErrTokenAlgo is error for unsupported signing algo
-	ErrTokenAlgo = errors.New("goic id_token: unsupported signing algo")
+	ErrTokenAlgo = fmt.Errorf("goic id_token: unsupported signing algo")
 
 	// ErrTokenKey is error for undetermined signing key
-	ErrTokenKey = errors.New("goic id_token: can't determine signing key")
+	ErrTokenKey = fmt.Errorf("goic id_token: can't determine signing key")
 
 	// ErrTokenAccessKey is error for invalid access_token
-	ErrTokenAccessKey = errors.New("goic id_token: invalid access_token")
+	ErrTokenAccessKey = fmt.Errorf("goic id_token: invalid access_token")
 
 	// ErrSignOutRedir is error for invalid post sign-out redirect uri
-	ErrSignOutRedir = errors.New("goic sign-out: post redirect uri is invalid")
+	ErrSignOutRedir = fmt.Errorf("goic sign-out: post redirect uri is invalid")
 )
 
 var (
@@ -326,7 +326,7 @@ func (g *Goic) process(res http.ResponseWriter, req *http.Request) {
 		if desc := qry.Get("error_description"); desc != "" {
 			msg += ": " + desc
 		}
-		g.errorHTML(res, errors.New(msg), restart, "callback")
+		g.errorHTML(res, fmt.Errorf(msg), restart, "callback")
 		return
 	}
 
@@ -412,7 +412,7 @@ func (g *Goic) UserInfo(tok *Token) *User {
 	}
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return user.withError(err)
 	}
@@ -510,25 +510,25 @@ func (g *Goic) RevokeToken(tok *Token) error {
 	}
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
 
-	var revoke map[string]interface{}
+	var revoke map[string]any
 	if err := json.Unmarshal(body, &revoke); err != nil {
 		return err
 	}
 	if e, ok := revoke["error"].(map[string]string); ok {
 		if msg, ok := e["message"]; ok {
-			return errors.New(msg)
+			return fmt.Errorf(msg)
 		}
 	}
 	return nil
 }
 
 // logIf logs if verbose is set
-func (g *Goic) logIf(s string, v ...interface{}) {
+func (g *Goic) logIf(s string, v ...any) {
 	if g.verbose {
 		log.Printf(s, v...)
 	}

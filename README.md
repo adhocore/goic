@@ -27,8 +27,8 @@ All the OpenID providers that your server should support will need a unique name
 providers get a URI like so `/auth/o8/<name>`. Example:
 
 | Provider | Name | OpenID URI | Revocation | Signout |
-|----------|------|------------|----------|------------|---------|
-| Google | google | `/auth/o8/google` |  Yes | No
+|----------|------|------------|----------|------------|
+| Google | google | `/auth/o8/google` | Yes | No
 | Facebook | facebook | `/auth/o8/facebook` | No | No
 | Microsoft | microsoft | `/auth/o8/microsoft` | No | Yes
 | Yahoo | yahoo | `/auth/o8/yahoo` | Yes | No

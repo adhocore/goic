@@ -103,9 +103,23 @@ func (p *Provider) WithScope(s string) *Provider {
 	return p
 }
 
+// SetQuery sets query func for inital auth request
+func (p *Provider) SetQuery(fn func() string) *Provider {
+	p.QueryFn = fn
+	return p
+}
+
+// SetErr sets last encountered error
+func (p *Provider) SetErr(err error) { p.err = err }
+
+// Is checks if provider is given type
+func (p *Provider) Is(name string) bool {
+	return p.Name == name
+}
+
 // getWellKnown gets the well known config from Provider remote
 func (p *Provider) getWellKnown() (*WellKnown, error) {
-	if nil != p.wellKnown {
+	if nil != p.wellKnown && p.discovered {
 		return p.wellKnown, nil
 	}
 
@@ -140,6 +154,27 @@ func (p *Provider) getWellKnown() (*WellKnown, error) {
 	}
 
 	return p.wellKnown, nil
+}
+
+// GetURI gets an endpoint for given action
+func (p *Provider) GetURI(action string) (uri string) {
+	switch action {
+	case "auth":
+		uri = p.wellKnown.AuthURI
+	case "token":
+		uri = p.wellKnown.TokenURI
+	case "userinfo":
+		uri = p.wellKnown.UserInfoURI
+	case "revoke":
+		uri = p.wellKnown.RevokeURI
+	case "signout":
+		uri = p.wellKnown.SignOutURI
+	}
+
+	// if p.Sandbox && p.Is("paypal") {
+	// 	uri = strings.Replace(uri, ".paypal.com", ".sandbox.paypal.com", 1)
+	// }
+	return uri
 }
 
 // CanRevoke checks if token can be revoked for this Provider

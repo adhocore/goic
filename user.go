@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // User represents user from well known user info endpoint
@@ -68,8 +68,8 @@ func (tok *Token) VerifyClaims(nonce, aud string) (err error) {
 		return ErrTokenNonce
 	}
 
-	if _, ok = claims["aud"]; ok && !claims.VerifyAudience(aud, true) {
-		return ErrTokenAud
+	if err = jwt.NewValidator().Validate(claims); err != nil {
+		return err
 	}
 
 	tok.Claims = claims // attach only if valid

@@ -66,12 +66,12 @@ type UserCallback func(t *Token, u *User, w http.ResponseWriter, r *http.Request
 
 // Goic is the main program
 type Goic struct {
-	URIPrefix    string
-	verbose      bool
 	providers    map[string]*Provider
 	userCallback UserCallback
-	sLock        sync.RWMutex
 	states       map[string]string
+	URIPrefix    string
+	sLock        sync.RWMutex
+	verbose      bool
 }
 
 // New gives new GOIC instance

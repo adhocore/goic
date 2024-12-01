@@ -10,15 +10,15 @@ import (
 
 // User represents user from well known user info endpoint
 type User struct {
+	Error         error  `json:"-"`
 	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified,omitempty"`
 	FamilyName    string `json:"family_name,omitempty"`
 	GivenName     string `json:"given_name,omitempty"`
 	Locale        string `json:"locale,omitempty"`
 	Name          string `json:"name"`
 	Picture       string `json:"picture,omitempty"`
 	Subject       string `json:"sub,omitempty"`
-	Error         error  `json:"-"`
+	EmailVerified bool   `json:"email_verified,omitempty"`
 }
 
 // withError embeds Error to User

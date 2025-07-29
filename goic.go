@@ -115,7 +115,7 @@ func (g *Goic) AddProvider(p *Provider, async ...bool) *Provider {
 
 	if !p.discovered {
 		p.wellKnown, p.err = p.WellKnowner()
-		if p.err != nil && len(async) == 0 || !async[0] {
+		if p.err != nil && (len(async) == 0 || !async[0]) {
 			log.Fatalf("goic provider %s: cannot load well-known configuration: %s", p.Name, p.err.Error())
 		}
 	}

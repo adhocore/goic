@@ -8,7 +8,7 @@ import (
 	"github.com/adhocore/goic"
 )
 
-func main() {
+func google() {
 	// Init GOIC with a root uri and verbose mode (=true)
 	g := goic.New("/auth/o8", true)
 

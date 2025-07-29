@@ -7,7 +7,7 @@ import (
 	"github.com/adhocore/goic"
 )
 
-func main() {
+func facebook() {
 	g := goic.New("/auth/o8", true)
 
 	g.AddProvider(goic.Facebook.WithCredential("3462809713976120", "f6eab7509f137f45ff73d2fddf28604a"))

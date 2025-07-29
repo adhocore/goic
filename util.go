@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
-	"time"
 )
 
 var (
@@ -21,8 +20,6 @@ var (
 // It sets rand seed on each call and returns generated string.
 func RandomString(len int) string {
 	str := make([]byte, len)
-	rand.Seed(time.Now().UTC().UnixNano())
-
 	for i := range str {
 		str[i] = randomPool[rand.Intn(poolLength)]
 	}

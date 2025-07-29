@@ -12,6 +12,7 @@ import (
 // Provider represents OpenID Connect provider
 type Provider struct {
 	wellKnown    *WellKnown
+	WellKnowner  func() (*WellKnown, error) // allows user to set own loader
 	QueryFn      func() string
 	err          error
 	Name         string
@@ -142,33 +143,35 @@ func (p *Provider) getWellKnown() (*WellKnown, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
 
+	defer res.Body.Close()
 	p.discovered = true
-	if err := json.NewDecoder(res.Body).Decode(&p.wellKnown); err != nil {
+
+	var wk = &WellKnown{}
+	if err := json.NewDecoder(res.Body).Decode(wk); err != nil {
 		return nil, err
 	}
 
-	if p.wellKnown.RevokeURI == "" && p.wellKnown.XRevokeURI != "" {
-		p.wellKnown.RevokeURI = p.wellKnown.XRevokeURI
+	if wk.RevokeURI == "" && wk.XRevokeURI != "" {
+		wk.RevokeURI = wk.XRevokeURI
 	}
 
-	if p.wellKnown.KeysURI == "" {
-		return p.wellKnown, nil
+	if wk.KeysURI == "" {
+		return wk, nil
 	}
 
 	// Fetch jwks keys
-	res, err = http.Get(p.wellKnown.KeysURI)
+	res, err = http.Get(wk.KeysURI)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
 
-	if err := json.NewDecoder(res.Body).Decode(&p.wellKnown.jwks); err != nil {
-		return p.wellKnown, err
+	if err := json.NewDecoder(res.Body).Decode(&wk.jwks); err != nil {
+		return wk, err
 	}
-
-	return p.wellKnown, nil
+	log.Println(p.Name+":", "loaded .well-known openid config")
+	return wk, nil
 }
 
 // GetURI gets an endpoint for given action

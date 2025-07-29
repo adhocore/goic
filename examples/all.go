@@ -9,7 +9,7 @@ import (
 	"github.com/adhocore/goic"
 )
 
-func main() {
+func all() {
 	g := goic.New("/auth/o8", true)
 	g.AddProvider(goic.Google.WithCredential(os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET")))
 	g.AddProvider(goic.Microsoft.WithCredential(os.Getenv("MICROSOFT_CLIENT_ID"), os.Getenv("MICROSOFT_CLIENT_SECRET")))

@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -82,9 +83,9 @@ func New(uri string, verbose bool) *Goic {
 	return &Goic{URIPrefix: uri, verbose: verbose, providers: providers, states: states}
 }
 
-// NewProvider adds a new OpenID provider by name
+// NewProvider registers a new OpenID provider by name
 // It also preloads the well known config and jwks keys
-func (g *Goic) NewProvider(name, uri string) *Provider {
+func (g *Goic) NewProvider(name, uri string, loader ...func() (*WellKnown, error)) *Provider {
 	if p, ok := g.providers[name]; ok {
 		g.logIf("goic provider %s: already set", name)
 		return p
@@ -96,26 +97,39 @@ func (g *Goic) NewProvider(name, uri string) *Provider {
 	}
 
 	p := &Provider{Name: name, URL: uri, Scope: "openid", host: u.Host}
-	if _, err := p.getWellKnown(); err != nil {
-		log.Fatalf("goic provider %s: cannot load well-known configuration: %s", name, err.Error())
+	if len(loader) > 0 && loader[0] != nil {
+		p.WellKnowner = loader[0]
 	}
-
-	g.providers[p.Name] = p
-	return p
+	return g.AddProvider(p)
 }
 
-// AddProvider adds a Provider to Goic
-func (g *Goic) AddProvider(p *Provider) *Provider {
+// AddProvider adds a Provider to Goic only if it can be discovered
+func (g *Goic) AddProvider(p *Provider, async ...bool) *Provider {
 	if p, ok := g.providers[p.Name]; ok {
 		g.logIf("goic provider %s: already set", p.Name)
 		return p
 	}
+	if p.WellKnowner == nil {
+		p.WellKnowner = p.getWellKnown
+	}
 
-	if _, err := p.getWellKnown(); err != nil {
-		p.SetErr(err)
+	if !p.discovered {
+		p.wellKnown, p.err = p.WellKnowner()
+		if p.err != nil && len(async) == 0 || !async[0] {
+			log.Fatalf("goic provider %s: cannot load well-known configuration: %s", p.Name, p.err.Error())
+		}
+	}
+	if p.err != nil {
+		return p // return without assigning
 	}
 
 	g.providers[p.Name] = p
+	go func() { // Keep wellknown in sync
+		for range time.NewTicker(24 * time.Hour).C {
+			p.discovered = false
+			p.wellKnown, p.err = p.WellKnowner()
+		}
+	}()
 	return p
 }
 
